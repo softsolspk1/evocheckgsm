@@ -102,7 +102,7 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
 
     if (!isOpen) return null;
 
-    const isReadOnly = mode === 'VIEW' || mode === 'DELETE';
+    const isReadOnly = mode === 'VIEW';
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -388,7 +388,7 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                         >
                             {isReadOnly ? 'Close' : 'Cancel'}
                         </button>
-                        {!isReadOnly && (
+                        {mode !== 'VIEW' && (
                             <button
                                 type="submit"
                                 disabled={loading}
