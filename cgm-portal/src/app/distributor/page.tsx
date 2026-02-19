@@ -1,6 +1,8 @@
 import MasterList from '@/components/MasterList';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DistributorPage() {
     const distributors = await prisma.distributor.findMany({
         include: { city: true, area: true }

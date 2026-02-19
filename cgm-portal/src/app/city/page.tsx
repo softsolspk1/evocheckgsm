@@ -1,6 +1,8 @@
 import MasterList from '@/components/MasterList';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CityPage() {
     const cities = await prisma.city.findMany({
         include: { _count: { select: { areas: true } } }
