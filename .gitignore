@@ -1,0 +1,13 @@
+node_modules/
+.next/
+dist/
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+*.db
+*.db-journal
+prisma/seed.json
+.DS_Store

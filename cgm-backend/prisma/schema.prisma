@@ -1,0 +1,169 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SUB_ADMIN
+  KAM
+  DISTRIBUTOR
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  name          String
+  role          Role     @default(KAM)
+  employeeCode  String?  @unique
+  phone         String?
+  cityId        String?
+  areaId        String?
+  distributorId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  city        City?        @relation(fields: [cityId], references: [id])
+  area        Area?        @relation(fields: [areaId], references: [id])
+  distributor Distributor? @relation(fields: [distributorId], references: [id])
+  ordersAsKam Order[]      @relation("KamOrders")
+
+  // For Admin Audit
+  createdOrders Order[] @relation("CreatedBy")
+}
+
+model City {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  areas     Area[]
+  users     User[]
+  orders    Order[]
+  patients  Patient[]
+  distributors Distributor[]
+}
+
+model Area {
+  id        String   @id @default(uuid())
+  name      String
+  cityId    String
+  city      City     @relation(fields: [cityId], references: [id])
+  users     User[]
+  orders    Order[]
+  patients  Patient[]
+  distributors Distributor[]
+
+  @@unique([name, cityId])
+}
+
+model Distributor {
+  id        String   @id @default(uuid())
+  name      String
+  cityId    String
+  areaId    String
+  city      City     @relation(fields: [cityId], references: [id])
+  area      Area     @relation(fields: [areaId], references: [id])
+  users     User[]
+  orders    Order[]
+  inventory Inventory[]
+
+  @@unique([name, areaId])
+}
+
+model Patient {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String   @unique
+  email       String?
+  address     String?
+  cityId      String?
+  areaId      String?
+  city        City?    @relation(fields: [cityId], references: [id])
+  area        Area?    @relation(fields: [areaId], references: [id])
+  orders      Order[]
+  postForms   PostAdministrationForm[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  patientId     String
+  kamId         String?
+  distributorId String?
+  cityId        String
+  createdById   String
+  status        OrderStatus @default(PENDING)
+  doctorName    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+  kam         User?        @relation("KamOrders", fields: [kamId], references: [id])
+  distributor Distributor? @relation(fields: [distributorId], references: [id])
+  city        City         @relation(fields: [cityId], references: [id])
+  area        Area?        @relation(fields: [areaId], references: [id])
+  createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+
+  areaId      String?
+
+  postForm    PostAdministrationForm?
+}
+
+model PostAdministrationForm {
+  id                    String   @id @default(uuid())
+  orderId               String   @unique
+  patientId             String
+  kamName               String
+  kamEmployeeCode       String
+  region                String?
+  city                  String
+  area                  String
+  referredBy            String?
+  referralCode          String?
+  referralTeam          String?
+  doctorName            String
+  doctorCode            String
+  serviceProvider       String // Distributor
+  patientName           String
+  patientArea           String
+  sensorInstalledBy     String
+  visitDate             DateTime
+  visitTime             String
+  numberOfDevices       Int
+  patientEmail          String?
+  patientWhatsApp       String
+  firstActivationDate   DateTime?
+  comments              String?
+  serialNumber          String?
+  reminder              Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id])
+}
+
+model Inventory {
+  id              String   @id @default(uuid())
+  distributorId   String
+  totalStock      Int      @default(0)
+  allocatedStock  Int      @default(0)
+  availableStock  Int      @default(0)
+  lastUpdated     DateTime @updatedAt
+
+  distributor     Distributor @relation(fields: [distributorId], references: [id])
+}

@@ -1,0 +1,169 @@
+{
+  "cities": [
+    {
+      "name": "Peshawar"
+    },
+    {
+      "name": "Faisalabad"
+    },
+    {
+      "name": "Lahore"
+    },
+    {
+      "name": "Multan"
+    },
+    {
+      "name": "Islamabad"
+    },
+    {
+      "name": "Rawalpindi"
+    },
+    {
+      "name": "Karachi"
+    },
+    {
+      "name": "Sangla"
+    },
+    {
+      "name": "Swat"
+    },
+    {
+      "name": "Mardan"
+    },
+    {
+      "name": "Chitral"
+    },
+    {
+      "name": "Faisalabad, Sargodha"
+    }
+  ],
+  "users": [
+    {
+      "name": "Malik Muhammad Awais Khan",
+      "employeeCode": "10580",
+      "role": "KAM",
+      "email": "10580@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Waseem",
+      "employeeCode": "10578",
+      "role": "KAM",
+      "email": "10578@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Hassan Abbas",
+      "employeeCode": "10605",
+      "role": "KAM",
+      "email": "10605@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Aftab Sajid",
+      "employeeCode": "10572",
+      "role": "KAM",
+      "email": "10572@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Qudarat Ullah",
+      "employeeCode": "P-Evo-115",
+      "role": "KAM",
+      "email": "P-Evo-115@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Hanook",
+      "employeeCode": "10576",
+      "role": "KAM",
+      "email": "10576@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Waqar",
+      "employeeCode": "10591",
+      "role": "KAM",
+      "email": "10591@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Fawad Murad",
+      "employeeCode": "10574",
+      "role": "KAM",
+      "email": "10574@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Qasim",
+      "employeeCode": "P-Evo-94",
+      "role": "KAM",
+      "email": "P-Evo-94@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Arsalan Aslam",
+      "employeeCode": "P-Evo-83",
+      "role": "KAM",
+      "email": "P-Evo-83@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Aamir Latif",
+      "employeeCode": "10573",
+      "role": "KAM",
+      "email": "10573@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Asad Javed",
+      "employeeCode": "10596",
+      "role": "KAM",
+      "email": "10596@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Waqar",
+      "employeeCode": "10578",
+      "role": "KAM",
+      "email": "10578@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Syed Hammad Ali",
+      "employeeCode": "P-Evo-58",
+      "role": "KAM",
+      "email": "P-Evo-58@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Haroon Nadeem",
+      "employeeCode": "P-Evo-122",
+      "role": "KAM",
+      "email": "P-Evo-122@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Sami Ullah",
+      "employeeCode": "P-Evo-114",
+      "role": "KAM",
+      "email": "P-Evo-114@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Asad Javed",
+      "employeeCode": "10572",
+      "role": "KAM",
+      "email": "10572@pharmevo.biz",
+      "password": "hashed_password_123"
+    },
+    {
+      "name": "Muhammad Fawad Murad, Muhammad Waseem",
+      "employeeCode": "10574",
+      "role": "KAM",
+      "email": "10574@pharmevo.biz",
+      "password": "hashed_password_123"
+    }
+  ],
+  "patients": []
+}
