@@ -16,5 +16,5 @@ export default async function AreaPage() {
         { key: 'cityName', label: 'City' },
     ];
 
-    return <MasterList title="Area" data={displayData} columns={columns} />;
+    return <MasterList title="Area" data={displayData} columns={columns} type="Area" />;
 }

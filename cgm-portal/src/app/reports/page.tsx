@@ -1,94 +1,223 @@
-import React from 'react';
-import { prisma } from '@/lib/prisma';
+"use client";
+import React, { useState, useEffect } from 'react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell, LineChart, Line, Legend
+} from 'recharts';
+import {
+    BarChart3, Users, Package, MapPin, Download,
+    FileText, Table as TableIcon, Loader2, Calendar
+} from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
-export default async function ReportsPage() {
-    const cityDistribution = await prisma.city.findMany({
-        include: { _count: { select: { orders: true } } }
-    });
+export default function ReportsPage() {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const kamPerformance = await prisma.user.findMany({
-        where: { role: 'KAM' },
-        include: { _count: { select: { ordersAsKam: true } }, city: true },
-        take: 5,
-        orderBy: { ordersAsKam: { _count: 'desc' } }
-    });
+    useEffect(() => {
+        fetchReports();
+    }, []);
 
-    const inventory = await prisma.inventory.findMany({
-        include: {
-            distributor: {
-                include: { city: true }
-            }
+    const fetchReports = async () => {
+        try {
+            const res = await fetch('/api/reports');
+            const d = await res.json();
+            setData(d);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
-    });
+    };
+
+    const exportToExcel = () => {
+        if (!data) return;
+        const wb = XLSX.utils.book_new();
+
+        const cityWS = XLSX.utils.json_to_sheet(data.cityDistribution);
+        XLSX.utils.book_append_sheet(wb, cityWS, "City Distribution");
+
+        const kamWS = XLSX.utils.json_to_sheet(data.kamPerformance);
+        XLSX.utils.book_append_sheet(wb, kamWS, "KAM Performance");
+
+        const inventoryWS = XLSX.utils.json_to_sheet(data.inventory);
+        XLSX.utils.book_append_sheet(wb, inventoryWS, "Inventory Status");
+
+        XLSX.writeFile(wb, "EVO_Pulse_Analytics_Report.xlsx");
+    };
+
+    const exportToPDF = () => {
+        if (!data) return;
+        const doc = new jsPDF() as any;
+        doc.setFontSize(20);
+        doc.text("PharmEvo EVO-Pulse Analytics Report", 14, 22);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+        doc.autoTable({
+            startY: 40,
+            head: [['City Name', 'Total Orders']],
+            body: data.cityDistribution.map((c: any) => [c.name, c.orders]),
+        });
+
+        doc.autoTable({
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [['KAM Name', 'Converted Orders']],
+            body: data.kamPerformance.map((k: any) => [k.name, k.orders]),
+        });
+
+        doc.save("EVO_Pulse_Report.pdf");
+    };
+
+    if (loading) return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+            <Loader2 className="animate-spin text-blue-500" size={48} />
+            <p className="font-black text-slate-400 uppercase tracking-widest text-xs">Aggregating Global Analytics...</p>
+        </div>
+    );
+
+    const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#6366F1'];
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Real-time Analytics & Reports</h1>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="card">
-                    <h3 className="font-semibold mb-4 text-blue-800">City-wise Distribution</h3>
-                    <div className="space-y-4">
-                        {cityDistribution.map(city => (
-                            <div key={city.id}>
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-sm font-medium">{city.name}</span>
-                                    <span className="font-bold">{city._count.orders}</span>
-                                </div>
-                                <div className="w-full bg-gray-100 rounded-full h-2">
-                                    <div
-                                        className="bg-blue-500 h-2 rounded-full"
-                                        style={{ width: `${Math.min((city._count.orders / 200) * 100, 100)}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+        <div className="space-y-10 pb-20">
+            {/* Header section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Analytics Intelligence</h1>
+                    <p className="text-slate-500 font-medium">Real-time performance metrics and distribution insights.</p>
                 </div>
-
-                <div className="card">
-                    <h3 className="font-semibold mb-4 text-blue-800">KAM Performance Ranking</h3>
-                    <ul className="space-y-4">
-                        {kamPerformance.map((kam, index) => (
-                            <li key={kam.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-400 font-bold w-4">{index + 1}.</span>
-                                    <div>
-                                        <p className="font-medium text-gray-800">{kam.name}</p>
-                                        <p className="text-xs text-gray-500">{kam.city?.name || 'Global'}</p>
-                                    </div>
-                                </div>
-                                <span className="text-green-600 font-bold">{kam._count.ordersAsKam} Orders</span>
-                            </li>
-                        ))}
-                    </ul>
+                <div className="flex gap-4">
+                    <button onClick={exportToExcel} className="btn-secondary group flex items-center gap-2">
+                        <TableIcon size={18} className="text-emerald-600" />
+                        <span>Export Excel</span>
+                    </button>
+                    <button onClick={exportToPDF} className="btn-secondary group flex items-center gap-2">
+                        <FileText size={18} className="text-rose-600" />
+                        <span>Export PDF</span>
+                    </button>
                 </div>
             </div>
 
-            <div className="card border-t-4 border-blue-500">
-                <h3 className="font-semibold mb-4 text-blue-800">Inventory Status</h3>
+            {/* Dashboard Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Order Trend Line Chart */}
+                <div className="card lg:col-span-2">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                            <Calendar size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-800">Order Velocity</h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Last 7 Days Trend</p>
+                        </div>
+                    </div>
+                    <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={data.orderTrend}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                                />
+                                <Line type="monotone" dataKey="orders" stroke="#3B82F6" strokeWidth={4} dot={{ r: 6, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* City Distribution Bar Chart */}
+                <div className="card">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                            <MapPin size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-800">Geographic Spread</h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Orders per City</p>
+                        </div>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={data.cityDistribution}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} />
+                                <Tooltip cursor={{ fill: '#F8FAFC' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                                <Bar dataKey="orders" fill="#6366F1" radius={[6, 6, 0, 0]} barSize={40} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Inventory Pie Chart */}
+                <div className="card">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
+                            <Package size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-800">Inventory Distribution</h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Stock Health Globally</p>
+                        </div>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data.inventory}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="available"
+                                    nameKey="distributor"
+                                >
+                                    {data.inventory.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Performance Ranking Table */}
+            <div className="card">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+                        <Users size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-slate-800">KAM Conversion Rankings</h3>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Top Performance Metrics</p>
+                    </div>
+                </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full">
                         <thead>
-                            <tr className="border-b text-gray-500 text-sm">
-                                <th className="pb-3">Distributor</th>
-                                <th className="pb-3">City</th>
-                                <th className="pb-3">Total Stock</th>
-                                <th className="pb-3 text-center">Available</th>
-                                <th className="pb-3 text-right">Status</th>
+                            <tr className="text-left border-b border-slate-100">
+                                <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-widest">Rank</th>
+                                <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-widest">Representative</th>
+                                <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-widest">City</th>
+                                <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-widest text-right">Total Conversions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y">
-                            {inventory.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50">
-                                    <td className="py-4 font-medium">{item.distributor.name}</td>
-                                    <td>{item.distributor.city.name}</td>
-                                    <td>{item.totalStock}</td>
-                                    <td className="text-center font-bold">{item.availableStock}</td>
-                                    <td className="text-right">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.availableStock > 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                            {item.availableStock > 10 ? 'HEALTHY' : 'LOW STOCK'}
+                        <tbody className="divide-y divide-slate-50">
+                            {data.kamPerformance.slice(0, 5).map((kam: any, index: number) => (
+                                <tr key={index} className="group hover:bg-slate-50/50 transition-colors">
+                                    <td className="py-4 px-2 font-black text-slate-300">#{index + 1}</td>
+                                    <td className="py-4 px-2 font-bold text-slate-800">{kam.name}</td>
+                                    <td className="py-4 px-2 text-sm text-slate-500 font-medium">{kam.city || 'Global'}</td>
+                                    <td className="py-4 px-2 text-right">
+                                        <span className="inline-flex items-center justify-center min-w-10 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-black">
+                                            {kam.orders}
                                         </span>
                                     </td>
                                 </tr>

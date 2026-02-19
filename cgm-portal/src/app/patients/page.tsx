@@ -19,5 +19,5 @@ export default async function PatientsPage() {
         { key: 'status', label: 'Status' },
     ];
 
-    return <MasterList title="Patient" data={displayData} columns={columns} />;
+    return <MasterList title="Patient" data={displayData} columns={columns} type="Patient" />;
 }

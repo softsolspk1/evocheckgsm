@@ -9,15 +9,15 @@ export default async function KamPage() {
 
     const displayData = kams.map(kam => ({
         ...kam,
-        cityName: kam.city?.name || 'Unassigned',
+        city: kam.city?.name || 'Global',
     }));
 
     const columns = [
-        { key: 'employeeCode', label: 'Employee Code' },
         { key: 'name', label: 'KAM Name' },
-        { key: 'cityName', label: 'Assigned City' },
+        { key: 'city', label: 'Assigned City' },
+        { key: 'email', label: 'Email' },
         { key: 'phone', label: 'Phone' },
     ];
 
-    return <MasterList title="KAM" data={displayData} columns={columns} />;
+    return <MasterList title="KAM" data={displayData} columns={columns} type="KAM" />;
 }

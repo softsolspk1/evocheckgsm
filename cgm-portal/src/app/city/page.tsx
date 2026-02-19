@@ -18,5 +18,5 @@ export default async function CityPage() {
         { key: 'areaCount', label: 'Total Areas' },
     ];
 
-    return <MasterList title="City" data={displayData} columns={columns} />;
+    return <MasterList title="City" data={displayData} columns={columns} type="City" />;
 }

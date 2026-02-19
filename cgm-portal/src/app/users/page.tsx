@@ -11,5 +11,5 @@ export default async function UsersPage() {
         { key: 'employeeCode', label: 'Code' },
     ];
 
-    return <MasterList title="User" data={users} columns={columns} />;
+    return <MasterList title="User" data={users} columns={columns} type="User" />;
 }
