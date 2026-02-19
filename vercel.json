@@ -1,0 +1,5 @@
+{
+    "buildCommand": "cd cgm-portal && npm run build",
+    "installCommand": "cd cgm-portal && npm install",
+    "outputDirectory": "cgm-portal/.next"
+}
