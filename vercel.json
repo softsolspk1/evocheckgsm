@@ -1,5 +1,0 @@
-{
-    "buildCommand": "cd cgm-portal && npx prisma generate && npm run build",
-    "installCommand": "cd cgm-portal && npm install",
-    "outputDirectory": "cgm-portal/.next"
-}
