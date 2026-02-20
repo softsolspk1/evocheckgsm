@@ -33,7 +33,27 @@ const menuItems = [
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const userRole = "SUPER_ADMIN"; // Mocked
+    const [userRole, setUserRole] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                setUserRole(user.role);
+
+                // Restricted pages for SUB_ADMIN
+                const restrictedPaths = ['/patients', '/city', '/area', '/distributor', '/kam', '/reports', '/users'];
+                if (user.role === 'SUB_ADMIN' && restrictedPaths.some(p => pathname.startsWith(p))) {
+                    router.push('/dashboard');
+                }
+            } catch (e) {
+                console.error("Failed to parse user from localStorage", e);
+            }
+        } else if (pathname !== '/login') {
+            router.push('/login');
+        }
+    }, [pathname, router]);
 
     if (pathname === '/login') return null;
 
@@ -43,7 +63,7 @@ export default function Sidebar() {
         router.push('/login');
     };
 
-    const filteredMenu = menuItems.filter(item => item.roles.includes(userRole));
+    const filteredMenu = menuItems.filter(item => userRole && item.roles.includes(userRole));
 
     return (
         <div className="sidebar">
