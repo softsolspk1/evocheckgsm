@@ -1,27 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator,
-    TextInput
+    TextInput, RefreshControl
 } from 'react-native';
-import { ShoppingBag, Search, MapPin, Phone, MessageCircle } from 'lucide-react-native';
+import { ShoppingBag, Search, MapPin, MessageCircle, Clock } from 'lucide-react-native';
 import { theme } from '../../theme';
+import { apiService } from '../../services/api';
 
 const DistributorOrders = () => {
-    const [orders, setOrders] = useState([
-        { id: 'ORD-7821', patient: 'Zahid Khan', kam: 'Shahid Mehmood', city: 'Karachi', status: 'Pending', date: '2026-02-19' },
-        { id: 'ORD-7819', patient: 'Maryam Ali', kam: 'Shahid Mehmood', city: 'Karachi', status: 'Processing', date: '2026-02-18' },
-        { id: 'ORD-7815', patient: 'Irfan Ahmed', kam: 'Faisal Kamal', city: 'Faisalabad', status: 'Dispatched', date: '2026-02-17' },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [orders, setOrders] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchData = async () => {
+        try {
+            const data = await apiService.getOrders();
+            setOrders(data);
+        } catch (error) {
+            console.error('Fetch error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
 
     const getStatusColor = (status) => {
-        switch (status.toLowerCase()) {
-            case 'pending': return '#F59E0B';
-            case 'processing': return '#3B82F6';
-            case 'dispatched': return '#10B981';
+        switch (status?.toUpperCase()) {
+            case 'PENDING': return '#F59E0B';
+            case 'PROCESSING': return '#3B82F6';
+            case 'DELIVERED': return '#10B981';
+            case 'DISPATCHED': return '#8B5CF6';
             default: return theme.colors.textLight;
         }
     };
+
+    const filteredOrders = orders.filter(o =>
+        o.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cityName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (loading && !refreshing) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -29,17 +65,22 @@ const DistributorOrders = () => {
                 <View style={styles.searchBar}>
                     <Search size={18} color={theme.colors.textLight} />
                     <TextInput
-                        placeholder="Search by order ID or KAM..."
+                        placeholder="Search by ID, Patient or City..."
                         style={styles.searchInput}
                         placeholderTextColor={theme.colors.textLight}
+                        value={searchTerm}
+                        onChangeText={setSearchTerm}
                     />
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
                 <Text style={styles.sectionLabel}>INCOMING SHIPMENTS</Text>
 
-                {orders.map((order) => (
+                {filteredOrders.length > 0 ? filteredOrders.map((order) => (
                     <View key={order.id} style={styles.orderCard}>
                         <View style={styles.cardHeader}>
                             <View style={styles.orderIdBox}>
@@ -51,20 +92,20 @@ const DistributorOrders = () => {
                             </View>
                         </View>
 
-                        <Text style={styles.patientName}>{order.patient}</Text>
+                        <Text style={styles.patientName}>{order.patientName || 'Anonymous'}</Text>
 
-                        <View style={styles.kamRow}>
-                            <Text style={styles.kamLabel}>KAM:</Text>
-                            <Text style={styles.kamName}>{order.kam}</Text>
+                        <View style={styles.detailRow}>
+                            <Clock size={12} color={theme.colors.textLight} />
+                            <Text style={styles.detailText}>{new Date(order.createdAt).toLocaleDateString()}</Text>
                         </View>
 
                         <View style={styles.locationRow}>
                             <MapPin size={12} color={theme.colors.textLight} />
-                            <Text style={styles.locationText}>{order.city}</Text>
+                            <Text style={styles.locationText}>{order.cityName || 'N/A'}</Text>
                         </View>
 
                         <View style={styles.actionRow}>
-                            {order.status === 'Pending' && (
+                            {order.status === 'PENDING' && (
                                 <TouchableOpacity style={styles.primaryAction}>
                                     <Text style={styles.primaryActionText}>Accept Order</Text>
                                 </TouchableOpacity>
@@ -74,7 +115,11 @@ const DistributorOrders = () => {
                             </TouchableOpacity>
                         </View>
                     </View>
-                ))}
+                )) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No orders found.</Text>
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -84,6 +129,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         padding: theme.spacing.md,
@@ -158,21 +208,16 @@ const styles = StyleSheet.create({
         color: theme.colors.secondary,
         marginBottom: 4,
     },
-    kamRow: {
+    detailRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
         marginBottom: 6,
     },
-    kamLabel: {
-        fontSize: 11,
+    detailText: {
+        fontSize: 12,
         color: theme.colors.textLight,
         fontWeight: '700',
-    },
-    kamName: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: theme.colors.text,
     },
     locationRow: {
         flexDirection: 'row',
@@ -214,6 +259,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: theme.colors.border,
+    },
+    emptyState: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    emptyText: {
+        color: theme.colors.textLight,
+        fontSize: 13,
+        fontWeight: '600',
+        fontStyle: 'italic',
     }
 });
 

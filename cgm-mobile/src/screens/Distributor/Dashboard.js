@@ -1,18 +1,79 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
 import { Package, ShoppingBag, Truck, AlertTriangle, ArrowRight } from 'lucide-react-native';
 import { theme } from '../../theme';
+import { apiService } from '../../services/api';
 
 const DistributorDashboard = ({ navigation }) => {
-    const stats = [
-        { label: 'Available Stock', value: '45', icon: Package, color: '#10B981' },
-        { label: 'Pending Orders', value: '12', icon: ShoppingBag, color: '#3B82F6' },
-        { label: 'Dispatched Today', value: '08', icon: Truck, color: '#8B5CF6' },
-    ];
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [stats, setStats] = useState([
+        { label: 'Available Stock', value: '0', icon: Package, color: '#10B981' },
+        { label: 'Pending Orders', value: '0', icon: ShoppingBag, color: '#3B82F6' },
+        { label: 'Dispatched Today', value: '0', icon: Truck, color: '#8B5CF6' },
+    ]);
+    const [recentOrders, setRecentOrders] = useState([]);
+    const [lowStockAlert, setLowStockAlert] = useState(null);
+
+    const fetchData = async () => {
+        try {
+            const [orders, inventory] = await Promise.all([
+                apiService.getOrders(),
+                apiService.getInventory()
+            ]);
+
+            // Calculate Distributor Specific Stats (Mocking distributor filtering)
+            const availableStock = inventory.reduce((acc, curr) => acc + curr.availableStock, 0);
+            const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
+            const dispatchedToday = orders.filter(o => o.status === 'DELIVERED').length; // Mock today filter
+
+            setStats([
+                { label: 'Available Stock', value: availableStock.toString(), icon: Package, color: '#10B981' },
+                { label: 'Pending Orders', value: pendingOrders.toString(), icon: ShoppingBag, color: '#3B82F6' },
+                { label: 'Dispatched Today', value: dispatchedToday.toString(), icon: Truck, color: '#8B5CF6' },
+            ]);
+
+            setRecentOrders(orders.slice(0, 2));
+
+            const lowStockItem = inventory.find(item => item.availableStock < 10);
+            if (lowStockItem) {
+                setLowStockAlert(`Low stock in ${lowStockItem.cityName} (${lowStockItem.availableStock} left)`);
+            } else {
+                setLowStockAlert(null);
+            }
+
+        } catch (error) {
+            console.error('Fetch error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
+
+    if (loading && !refreshing) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={styles.loadingText}>Loading Logistics...</Text>
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
                 <View style={styles.header}>
                     <View>
                         <Text style={styles.welcomeText}>Distributor Portal,</Text>
@@ -21,13 +82,15 @@ const DistributorDashboard = ({ navigation }) => {
                 </View>
 
                 {/* Status Cards */}
-                <View style={[styles.card, styles.alertCard]}>
-                    <AlertTriangle size={24} color={theme.colors.warning} />
-                    <View style={styles.alertContent}>
-                        <Text style={styles.alertTitle}>Low Stock Warning</Text>
-                        <Text style={styles.alertSubtitle}>Device inventory is below threshold in Karachi South.</Text>
+                {lowStockAlert && (
+                    <View style={[styles.card, styles.alertCard]}>
+                        <AlertTriangle size={24} color={theme.colors.warning} />
+                        <View style={styles.alertContent}>
+                            <Text style={styles.alertTitle}>Stock Warning</Text>
+                            <Text style={styles.alertSubtitle}>{lowStockAlert}</Text>
+                        </View>
                     </View>
-                </View>
+                )}
 
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
@@ -54,14 +117,14 @@ const DistributorDashboard = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>Incoming Orders</Text>
                         <ArrowRight size={18} color={theme.colors.textLight} />
                     </View>
-                    <View style={styles.orderItem}>
-                        <View style={styles.orderDot} />
-                        <Text style={styles.orderText}>ORD-7821 - Patient: Zahid Khan</Text>
-                    </View>
-                    <View style={styles.orderItem}>
-                        <View style={styles.orderDot} />
-                        <Text style={styles.orderText}>ORD-7819 - Patient: Maryam Ali</Text>
-                    </View>
+                    {recentOrders.length > 0 ? recentOrders.map((order, idx) => (
+                        <View key={idx} style={styles.orderItem}>
+                            <View style={styles.orderDot} />
+                            <Text style={styles.orderText}>{order.id || 'ORD-NEW'} - Patient: {order.patientName || 'Anonymous'}</Text>
+                        </View>
+                    )) : (
+                        <Text style={styles.noData}>No pending orders</Text>
+                    )}
                 </TouchableOpacity>
 
                 {/* Inventory Action */}
@@ -85,6 +148,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    center: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 12,
+        fontWeight: '900',
+        color: theme.colors.textLight,
+        letterSpacing: 1,
     },
     scrollContent: {
         padding: theme.spacing.md,
@@ -199,6 +273,11 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
         color: theme.colors.text,
+    },
+    noData: {
+        fontSize: 12,
+        color: theme.colors.textLight,
+        fontStyle: 'italic',
     }
 });
 

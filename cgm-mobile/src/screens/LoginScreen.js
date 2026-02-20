@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Mail, Lock, ArrowRight } from 'lucide-react-native';
 import { theme } from '../theme';
+import { apiService } from '../services/api';
 
 const LoginScreen = ({ onLogin }) => {
     const [email, setEmail] = useState('');
@@ -19,21 +20,12 @@ const LoginScreen = ({ onLogin }) => {
         }
 
         setLoading(true);
-        // Simulate API call to the backend
         try {
-            // In a real app, we'd fetch from our backend
-            // For now, we'll simulate based on email
-            setTimeout(() => {
-                let role = 'KAM';
-                if (email.includes('admin')) role = 'SUPER_ADMIN';
-                if (email.includes('distributor')) role = 'DISTRIBUTOR';
-                if (email.includes('subadmin')) role = 'SUB_ADMIN';
-
-                onLogin({ email, role, name: 'User' });
-                setLoading(false);
-            }, 1500);
+            const userData = await apiService.login(email, password);
+            onLogin(userData);
         } catch (error) {
-            Alert.alert('Error', 'Login failed. Please check your credentials.');
+            Alert.alert('Authentication Failed', error.message || 'Please check your credentials.');
+        } finally {
             setLoading(false);
         }
     };

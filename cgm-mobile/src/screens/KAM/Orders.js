@@ -2,27 +2,62 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator,
-    TextInput
+    TextInput, RefreshControl
 } from 'react-native';
 import { ShoppingCart, Search, Plus, Package, Clock } from 'lucide-react-native';
 import { theme } from '../../theme';
+import { apiService } from '../../services/api';
 
-const KAMOrders = () => {
-    const [loading, setLoading] = useState(false);
-    const [orders, setOrders] = useState([
-        { id: 'ORD-7821', patient: 'Zahid Khan', city: 'Karachi', status: 'Pending', date: '2026-02-19' },
-        { id: 'ORD-7819', patient: 'Maryam Ali', city: 'Karachi', status: 'Delivered', date: '2026-02-18' },
-        { id: 'ORD-7815', patient: 'Irfan Ahmed', city: 'Faisalabad', status: 'In Transit', date: '2026-02-17' },
-    ]);
+const KAMOrders = ({ navigation }) => {
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [orders, setOrders] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchData = async () => {
+        try {
+            const data = await apiService.getOrders();
+            setOrders(data);
+        } catch (error) {
+            console.error('Fetch error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
 
     const getStatusColor = (status) => {
-        switch (status.toLowerCase()) {
-            case 'pending': return '#F59E0B';
-            case 'delivered': return '#10B981';
-            case 'in transit': return '#3B82F6';
+        switch (status?.toUpperCase()) {
+            case 'PENDING': return '#F59E0B';
+            case 'PROCESSING': return '#3B82F6';
+            case 'DELIVERED': return '#10B981';
+            case 'DISPATCHED': return '#8B5CF6';
             default: return theme.colors.textLight;
         }
     };
+
+    const filteredOrders = orders.filter(o =>
+        o.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cityName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (loading && !refreshing) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -33,17 +68,22 @@ const KAMOrders = () => {
                         placeholder="Search orders..."
                         style={styles.searchInput}
                         placeholderTextColor={theme.colors.textLight}
+                        value={searchTerm}
+                        onChangeText={setSearchTerm}
                     />
                 </View>
-                <TouchableOpacity style={styles.addBtn}>
+                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('Form')}>
                     <Plus size={20} color="#fff" />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.sectionLabel}>RECENT SHIPMENTS</Text>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
+                <Text style={styles.sectionLabel}>MY SHIPMENTS</Text>
 
-                {orders.map((order) => (
+                {filteredOrders.length > 0 ? filteredOrders.map((order) => (
                     <TouchableOpacity key={order.id} style={styles.orderCard}>
                         <View style={styles.cardTop}>
                             <View style={styles.orderIdBox}>
@@ -55,19 +95,21 @@ const KAMOrders = () => {
                             </View>
                         </View>
 
-                        <Text style={styles.patientName}>{order.patient}</Text>
+                        <Text style={styles.patientName}>{order.patientName || 'Anonymous'}</Text>
 
                         <View style={styles.cardFooter}>
                             <View style={styles.infoRow}>
                                 <Clock size={12} color={theme.colors.textLight} />
-                                <Text style={styles.infoText}>{order.date}</Text>
+                                <Text style={styles.infoText}>{new Date(order.createdAt).toLocaleDateString()}</Text>
                             </View>
-                            <Text style={styles.cityText}>{order.city}</Text>
+                            <Text style={styles.cityText}>{order.cityName || 'N/A'}</Text>
                         </View>
                     </TouchableOpacity>
-                ))}
-
-                {loading && <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20 }} />}
+                )) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No orders found.</Text>
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -77,6 +119,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',
@@ -190,6 +237,16 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         color: theme.colors.text,
+    },
+    emptyState: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    emptyText: {
+        color: theme.colors.textLight,
+        fontSize: 13,
+        fontWeight: '600',
+        fontStyle: 'italic',
     }
 });
 

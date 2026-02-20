@@ -1,36 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
-    TouchableOpacity, SafeAreaView, ActivityIndicator
+    TouchableOpacity, SafeAreaView, ActivityIndicator,
+    RefreshControl
 } from 'react-native';
 import { User, MapPin, Calendar, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { theme } from '../../theme';
+import { apiService } from '../../services/api';
 
 const DeviceTracking = () => {
-    const [installations, setInstallations] = useState([
-        { id: '1', patient: 'Zahid Khan', area: 'South', city: 'Karachi', date: '2026-02-19', status: 'Completed' },
-        { id: '2', patient: 'Maryam Ali', area: 'East', city: 'Karachi', date: '2026-02-18', status: 'Completed' },
-        { id: '3', patient: 'Irfan Ahmed', area: 'Madina Town', city: 'Faisalabad', date: '2026-02-15', status: 'Follow-up Needed' },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [installations, setInstallations] = useState([]);
+
+    const fetchData = async () => {
+        try {
+            const orders = await apiService.getOrders();
+            // In a real scenario, we'd filter for "Delivered" or "Installed" status
+            const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').map(o => ({
+                id: o.id,
+                patient: o.patientName || 'Anonymous',
+                area: o.areaName || 'Main Center',
+                city: o.cityName || 'N/A',
+                date: new Date(o.updatedAt).toLocaleDateString(),
+                status: 'Completed'
+            }));
+            setInstallations(deliveredOrders);
+        } catch (error) {
+            console.error('Fetch error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
+
+    const totalInstalled = installations.length;
+    const thisMonth = installations.filter(i => {
+        const d = new Date();
+        const itemDate = new Date(i.date);
+        return itemDate.getMonth() === d.getMonth() && itemDate.getFullYear() === d.getFullYear();
+    }).length;
+
+    if (loading && !refreshing) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.summaryBar}>
                 <View style={styles.summaryBox}>
-                    <Text style={styles.summaryVal}>89</Text>
+                    <Text style={styles.summaryVal}>{totalInstalled}</Text>
                     <Text style={styles.summaryLab}>TOTAL INSTALLED</Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.summaryBox}>
-                    <Text style={[styles.summaryVal, { color: theme.colors.primary }]}>12</Text>
+                    <Text style={[styles.summaryVal, { color: theme.colors.primary }]}>{thisMonth}</Text>
                     <Text style={styles.summaryLab}>THIS MONTH</Text>
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
                 <Text style={styles.sectionLabel}>INSTALLATION HISTORY</Text>
 
-                {installations.map((item) => (
+                {installations.length > 0 ? installations.map((item) => (
                     <View key={item.id} style={styles.installCard}>
                         <View style={styles.cardHeader}>
                             <View style={styles.patientInfo}>
@@ -59,7 +107,11 @@ const DeviceTracking = () => {
                             </Text>
                         </View>
                     </View>
-                ))}
+                )) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No device installations tracked yet.</Text>
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -69,6 +121,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     summaryBar: {
         flexDirection: 'row',
@@ -165,6 +222,17 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '900',
         textTransform: 'uppercase',
+    },
+    emptyState: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    emptyText: {
+        color: theme.colors.textLight,
+        fontSize: 13,
+        fontWeight: '600',
+        fontStyle: 'italic',
+        textAlign: 'center',
     }
 });
 

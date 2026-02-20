@@ -1,29 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TextInput, TouchableOpacity, SafeAreaView,
-    Alert, Modal
+    Alert, Modal, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { Package, Plus, History, ChevronRight, Save, X } from 'lucide-react-native';
 import { theme } from '../../theme';
+import { apiService } from '../../services/api';
 
 const DistributorInventory = () => {
-    const [inventoryList, setInventoryList] = useState([
-        { id: '1', city: 'Karachi', area: 'South', total: 100, available: 45 },
-        { id: '2', city: 'Karachi', area: 'North', total: 100, available: 12 },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [inventoryList, setInventoryList] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newDeviceCount, setNewDeviceCount] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleAddInventory = () => {
+    const fetchData = async () => {
+        try {
+            const data = await apiService.getInventory();
+            setInventoryList(data);
+        } catch (error) {
+            console.error('Fetch error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
+
+    const handleAddInventory = async () => {
         if (!newDeviceCount) {
             Alert.alert('Error', 'Please enter number of devices');
             return;
         }
-        Alert.alert('Sucess', `${newDeviceCount} devices added to inventory.`);
-        setShowAddModal(false);
-        setNewDeviceCount('');
+
+        setSubmitting(true);
+        try {
+            // Mocking first distributor ID for mobile demo
+            const distributorId = inventoryList[0]?.id || 'dist-001';
+            await apiService.addInventory(distributorId, newDeviceCount);
+            Alert.alert('Success', `${newDeviceCount} devices added to inventory.`);
+            setShowAddModal(false);
+            setNewDeviceCount('');
+            fetchData();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update inventory.');
+        } finally {
+            setSubmitting(false);
+        }
     };
+
+    const totalStock = inventoryList.reduce((acc, curr) => acc + curr.totalStock, 0);
+    const availableStock = inventoryList.reduce((acc, curr) => acc + curr.availableStock, 0);
+
+    if (loading && !refreshing) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -38,17 +83,20 @@ const DistributorInventory = () => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Nationwide Summary Card */}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
+                {/* Summary Card */}
                 <View style={styles.summaryCard}>
                     <View style={styles.summaryItem}>
                         <Text style={styles.summaryLabel}>Total Stock</Text>
-                        <Text style={styles.summaryValue}>200</Text>
+                        <Text style={styles.summaryValue}>{totalStock}</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryItem}>
                         <Text style={styles.summaryLabel}>Available</Text>
-                        <Text style={[styles.summaryValue, { color: theme.colors.success }]}>57</Text>
+                        <Text style={[styles.summaryValue, { color: theme.colors.success }]}>{availableStock}</Text>
                     </View>
                 </View>
 
@@ -58,12 +106,12 @@ const DistributorInventory = () => {
                     <View key={item.id} style={styles.inventoryCard}>
                         <View style={styles.cardHeader}>
                             <View style={styles.locationInfo}>
-                                <Text style={styles.cityName}>{item.city}</Text>
-                                <Text style={styles.areaName}>{item.area}</Text>
+                                <Text style={styles.cityName}>{item.cityName}</Text>
+                                <Text style={styles.areaName}>{item.areaName}</Text>
                             </View>
-                            <View style={[styles.statusBadge, { backgroundColor: item.available < 20 ? '#FEE2E2' : '#D1FAE5' }]}>
-                                <Text style={[styles.statusText, { color: item.available < 20 ? '#B91C1C' : '#047857' }]}>
-                                    {item.available < 20 ? 'Low Stock' : 'Healthy'}
+                            <View style={[styles.statusBadge, { backgroundColor: item.availableStock < 20 ? '#FEE2E2' : '#D1FAE5' }]}>
+                                <Text style={[styles.statusText, { color: item.availableStock < 20 ? '#B91C1C' : '#047857' }]}>
+                                    {item.availableStock < 20 ? 'Low Stock' : 'Healthy'}
                                 </Text>
                             </View>
                         </View>
@@ -71,15 +119,15 @@ const DistributorInventory = () => {
                         <View style={styles.stockDetails}>
                             <View style={styles.stockItem}>
                                 <Text style={styles.stockLabel}>TOTAL</Text>
-                                <Text style={styles.stockValue}>{item.total}</Text>
+                                <Text style={styles.stockValue}>{item.totalStock}</Text>
                             </View>
                             <View style={styles.stockItem}>
                                 <Text style={styles.stockLabel}>AVAILABLE</Text>
-                                <Text style={[styles.stockValue, { color: theme.colors.secondary }]}>{item.available}</Text>
+                                <Text style={[styles.stockValue, { color: theme.colors.secondary }]}>{item.availableStock}</Text>
                             </View>
                             <View style={styles.stockItem}>
                                 <Text style={styles.stockLabel}>ALLOCATED</Text>
-                                <Text style={styles.stockValue}>{item.total - item.available}</Text>
+                                <Text style={styles.stockValue}>{item.allocatedStock}</Text>
                             </View>
                         </View>
                     </View>
@@ -121,9 +169,17 @@ const DistributorInventory = () => {
                                 />
                             </View>
 
-                            <TouchableOpacity style={styles.saveButton} onPress={handleAddInventory}>
-                                <Save size={20} color="#fff" />
-                                <Text style={styles.saveButtonText}>Add to Stock</Text>
+                            <TouchableOpacity
+                                style={[styles.saveButton, submitting && { opacity: 0.7 }]}
+                                onPress={handleAddInventory}
+                                disabled={submitting}
+                            >
+                                {submitting ? <ActivityIndicator color="#fff" /> : (
+                                    <>
+                                        <Save size={20} color="#fff" />
+                                        <Text style={styles.saveButtonText}>Add to Stock</Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -137,6 +193,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',
