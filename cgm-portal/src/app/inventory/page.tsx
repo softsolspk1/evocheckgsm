@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import {
     Package, Search, Download, FileText,
     Table as TableIcon, Loader2, MapPin,
-    Layers, AlertTriangle, CheckCircle2
+    Layers, AlertTriangle, CheckCircle2,
+    Plus, Edit2, X, Save
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -11,8 +12,21 @@ import 'jspdf-autotable';
 
 export default function InventoryPage() {
     const [inventory, setInventory] = useState<any[]>([]);
+    const [distributors, setDistributors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Modal states
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    // Form states
+    const [selectedDistributor, setSelectedDistributor] = useState('');
+    const [quantity, setQuantity] = useState('');
+    const [editingItem, setEditingItem] = useState<any>(null);
 
     const fetchInventory = async () => {
         setLoading(true);
@@ -27,9 +41,83 @@ export default function InventoryPage() {
         }
     };
 
+    const fetchDistributors = async () => {
+        try {
+            const res = await fetch('/api/distributors');
+            const data = await res.json();
+            setDistributors(data);
+        } catch (err) {
+            console.error('Failed to fetch distributors', err);
+        }
+    };
+
     useEffect(() => {
         fetchInventory();
+        fetchDistributors();
     }, []);
+
+    const handleAddInventory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const res = await fetch('/api/inventory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ distributorId: selectedDistributor, quantity })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to add inventory');
+            }
+
+            setSuccess('Inventory updated successfully!');
+            setSelectedDistributor('');
+            setQuantity('');
+            fetchInventory();
+            setTimeout(() => setShowAddModal(false), 1500);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleEditInventory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const res = await fetch('/api/inventory', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: editingItem.id,
+                    totalStock: editingItem.totalStock,
+                    availableStock: editingItem.availableStock,
+                    allocatedStock: editingItem.allocatedStock
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to update record');
+            }
+
+            setSuccess('Record updated successfully!');
+            fetchInventory();
+            setTimeout(() => setShowEditModal(false), 1500);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const filteredInventory = inventory.filter(item =>
         item.distributorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +148,7 @@ export default function InventoryPage() {
     const exportToPDF = () => {
         const doc = new jsPDF() as any;
         doc.setFontSize(20);
-        doc.text("CGM Portal - nationwide Inventory Report", 14, 22);
+        doc.text("CGM Portal - Nationwide Inventory Report", 14, 22);
         doc.setFontSize(10);
         doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
 
@@ -103,6 +191,10 @@ export default function InventoryPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <button onClick={() => setShowAddModal(true)} className="btn-primary h-12 flex items-center gap-2">
+                            <Plus size={18} />
+                            <span>Add Inventory</span>
+                        </button>
                         <button onClick={exportToExcel} className="btn-secondary h-12 flex items-center gap-2">
                             <TableIcon size={18} className="text-emerald-600" />
                             <span>Excel</span>
@@ -168,7 +260,7 @@ export default function InventoryPage() {
                                     <th className="py-4 px-6 font-black text-[10px] text-slate-400 uppercase tracking-widest text-center">Total Stock</th>
                                     <th className="py-4 px-6 font-black text-[10px] text-slate-400 uppercase tracking-widest text-center">Available</th>
                                     <th className="py-4 px-6 font-black text-[10px] text-slate-400 uppercase tracking-widest text-center">Allocated</th>
-                                    <th className="py-4 px-6 font-black text-[10px] text-slate-400 uppercase tracking-widest text-right">Status</th>
+                                    <th className="py-4 px-6 font-black text-[10px] text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -199,15 +291,12 @@ export default function InventoryPage() {
                                             <span className="text-sm font-bold text-slate-400">{item.allocatedStock}</span>
                                         </td>
                                         <td className="py-5 px-6 text-right">
-                                            {item.availableStock < 10 ? (
-                                                <span className="inline-flex px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                                    Low Stock
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                                    Healthy
-                                                </span>
-                                            )}
+                                            <button
+                                                onClick={() => { setEditingItem(item); setShowEditModal(true); }}
+                                                className="p-2 hover:bg-white hover:shadow-sm rounded-lg text-slate-400 hover:text-blue-600 transition-all"
+                                            >
+                                                <Edit2 size={18} />
+                                            </button>
                                         </td>
                                     </tr>
                                 )) : (
@@ -222,6 +311,128 @@ export default function InventoryPage() {
                     </div>
                 )}
             </div>
+
+            {/* Add Inventory Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800">Add Stock</h3>
+                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1 text-blue-600">Inventory Increase</p>
+                            </div>
+                            <button onClick={() => setShowAddModal(false)} className="p-3 hover:bg-white rounded-2xl text-slate-400 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddInventory} className="p-8 space-y-6">
+                            {error && <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-black uppercase tracking-widest">{error}</div>}
+                            {success && <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl text-xs font-black uppercase tracking-widest">{success}</div>}
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Distributor</label>
+                                <select
+                                    className="input-field w-full h-14 pr-10 appearance-none bg-no-repeat bg-[right_1rem_center]"
+                                    value={selectedDistributor}
+                                    onChange={(e) => setSelectedDistributor(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Select a distributor...</option>
+                                    {distributors.map(d => (
+                                        <option key={d.id} value={d.id}>{d.name} ({d.city.name})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity (Devices)</label>
+                                <input
+                                    type="number"
+                                    className="input-field w-full h-14"
+                                    placeholder="Enter number of devices"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.value)}
+                                    required
+                                    min="1"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="btn-primary w-full h-16 rounded-2xl font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {submitting ? <Loader2 className="animate-spin" /> : <><Save size={20} /><span>Update Stock</span></>}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Inventory Modal */}
+            {showEditModal && editingItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800">Edit Record</h3>
+                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1 text-blue-600">{editingItem.distributorName}</p>
+                            </div>
+                            <button onClick={() => setShowEditModal(false)} className="p-3 hover:bg-white rounded-2xl text-slate-400 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleEditInventory} className="p-8 space-y-6">
+                            {error && <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-black uppercase tracking-widest">{error}</div>}
+                            {success && <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl text-xs font-black uppercase tracking-widest">{success}</div>}
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Stock</label>
+                                    <input
+                                        type="number"
+                                        className="input-field w-full h-14"
+                                        value={editingItem.totalStock}
+                                        onChange={(e) => setEditingItem({ ...editingItem, totalStock: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Available</label>
+                                    <input
+                                        type="number"
+                                        className="input-field w-full h-14"
+                                        value={editingItem.availableStock}
+                                        onChange={(e) => setEditingItem({ ...editingItem, availableStock: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Allocated</label>
+                                <input
+                                    type="number"
+                                    className="input-field w-full h-14"
+                                    value={editingItem.allocatedStock}
+                                    onChange={(e) => setEditingItem({ ...editingItem, allocatedStock: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="btn-primary w-full h-16 rounded-2xl font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {submitting ? <Loader2 className="animate-spin" /> : <><Save size={20} /><span>Save Changes</span></>}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
