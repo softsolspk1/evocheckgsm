@@ -109,16 +109,17 @@ const DistributorInventory = () => {
 
                         <View style={styles.modalBody}>
                             <Text style={styles.inputLabel}>NUMBER OF DEVICES TO ADD</Text>
-                            <div style={styles.modalInputWrapper}>
+                            <View style={styles.modalInputWrapper}>
                                 <Package size={20} color={theme.colors.textLight} />
-                                <input
+                                <TextInput
                                     style={styles.modalInput}
                                     placeholder="Enter quantity"
+                                    placeholderTextColor={theme.colors.textLight}
                                     keyboardType="numeric"
                                     value={newDeviceCount}
                                     onChangeText={setNewDeviceCount}
                                 />
-                            </div>
+                            </View>
 
                             <TouchableOpacity style={styles.saveButton} onPress={handleAddInventory}>
                                 <Save size={20} color="#fff" />

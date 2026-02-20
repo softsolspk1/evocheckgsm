@@ -45,9 +45,10 @@ const SubmissionForm = () => {
                 <Text style={styles.label}>{label}</Text>
                 <View style={styles.inputWrapper}>
                     {Icon && <Icon size={18} color={theme.colors.textLight} style={styles.icon} />}
-                    <input
+                    <TextInput
                         style={styles.input}
                         placeholder={placeholder}
+                        placeholderTextColor={theme.colors.textLight}
                         value={formData[key]}
                         onChangeText={(text) => setFormData({ ...formData, [key]: text })}
                         keyboardType={keyboardType}
@@ -118,10 +119,11 @@ const SubmissionForm = () => {
                     <View style={[styles.inputGroup, { height: 100 }]}>
                         <Text style={styles.label}>COMMENTS / FEEDBACK</Text>
                         <View style={[styles.inputWrapper, { height: 80, alignItems: 'flex-start', paddingTop: 12 }]}>
-                            <input
+                            <TextInput
                                 style={[styles.input, { textAlignVertical: 'top' }]}
                                 multiline
                                 placeholder="Write any feedback here..."
+                                placeholderTextColor={theme.colors.textLight}
                                 value={formData.comments}
                                 onChangeText={(text) => setFormData({ ...formData, comments: text })}
                             />

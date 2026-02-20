@@ -65,9 +65,10 @@ const LoginScreen = ({ onLogin }) => {
                         <Text style={styles.label}>EMAIL ADDRESS</Text>
                         <View style={styles.inputWrapper}>
                             <Mail size={20} color={theme.colors.textLight} style={styles.inputIcon} />
-                            <input
+                            <TextInput
                                 style={styles.input}
                                 placeholder="name@pharmevo.biz"
+                                placeholderTextColor={theme.colors.textLight}
                                 value={email}
                                 onChangeText={setEmail}
                                 autoCapitalize="none"
@@ -80,9 +81,10 @@ const LoginScreen = ({ onLogin }) => {
                         <Text style={styles.label}>SECURITY KEY</Text>
                         <View style={styles.inputWrapper}>
                             <Lock size={20} color={theme.colors.textLight} style={styles.inputIcon} />
-                            <input
+                            <TextInput
                                 style={styles.input}
                                 placeholder="••••••••"
+                                placeholderTextColor={theme.colors.textLight}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
