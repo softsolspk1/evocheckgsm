@@ -15,6 +15,7 @@ export default function OrdersPage() {
     const [isCrudModalOpen, setIsCrudModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'VIEW' | 'EDIT' | 'DELETE'>('VIEW');
     const [searchTerm, setSearchTerm] = useState('');
+    const [dateFilter, setDateFilter] = useState<'ALL' | 'TODAY' | '7DAYS' | 'MONTH'>('ALL');
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -45,14 +46,40 @@ export default function OrdersPage() {
         patientName: o.patient.name,
         cityName: o.city.name,
         kamName: o.kam?.name || 'Unassigned',
-        date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    })).filter((o: any) =>
-        o.displayId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.cityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.kamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.status.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+        date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        rawDate: new Date(o.createdAt)
+    })).filter((o: any) => {
+        // Search term filter
+        const matchesSearch = o.displayId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            o.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            o.cityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            o.kamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            o.status.toLowerCase().includes(searchTerm.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        // Date filter
+        if (dateFilter === 'ALL') return true;
+
+        const now = new Date();
+        const orderDate = o.rawDate;
+
+        if (dateFilter === 'TODAY') {
+            return orderDate.toDateString() === now.toDateString();
+        }
+
+        if (dateFilter === '7DAYS') {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(now.getDate() - 7);
+            return orderDate >= sevenDaysAgo;
+        }
+
+        if (dateFilter === 'MONTH') {
+            return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+        }
+
+        return true;
+    });
 
     const exportToExcel = () => {
         const wb = XLSX.utils.book_new();
@@ -114,6 +141,27 @@ export default function OrdersPage() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                    </div>
+
+                    {/* Date Filters */}
+                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                        {[
+                            { id: 'ALL', label: 'All' },
+                            { id: 'TODAY', label: 'Today' },
+                            { id: '7DAYS', label: '7 Days' },
+                            { id: 'MONTH', label: 'Month' }
+                        ].map((btn) => (
+                            <button
+                                key={btn.id}
+                                onClick={() => setDateFilter(btn.id as any)}
+                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${dateFilter === btn.id
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                            >
+                                {btn.label}
+                            </button>
+                        ))}
                     </div>
 
                     <div className="flex items-center gap-2">
