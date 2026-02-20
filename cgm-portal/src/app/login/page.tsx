@@ -8,16 +8,33 @@ const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        // Simulate login
-        setTimeout(() => {
+        setError('');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Login failed');
+            }
+
+            const user = await res.json();
+            localStorage.setItem('user', JSON.stringify(user));
             router.push('/dashboard');
+        } catch (err: any) {
+            setError(err.message);
             setLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -87,6 +104,11 @@ const LoginPage = () => {
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-8">
+                        {error && (
+                            <div className="bg-rose-50 border-2 border-rose-100 text-rose-600 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest animate-shake">
+                                {error}
+                            </div>
+                        )}
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Identity / Email</label>
