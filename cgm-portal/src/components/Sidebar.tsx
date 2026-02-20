@@ -14,7 +14,8 @@ import {
     UserSquare2,
     BarChart3,
     Users2,
-    LogOut
+    LogOut,
+    Package
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -27,6 +28,7 @@ const menuItems = [
     { name: "Distributor", href: "/distributor", icon: Truck, roles: ["SUPER_ADMIN"] },
     { name: "KAM", href: "/kam", icon: UserSquare2, roles: ["SUPER_ADMIN"] },
     { name: "Reports", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
+    { name: "Inventory", href: "/inventory", icon: Package, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Users", href: "/users", icon: Users2, roles: ["SUPER_ADMIN"] },
 ];
 

@@ -1,0 +1,205 @@
+import React from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Package, ShoppingBag, Truck, AlertTriangle, ArrowRight } from 'lucide-react-native';
+import { theme } from '../../theme';
+
+const DistributorDashboard = ({ navigation }) => {
+    const stats = [
+        { label: 'Available Stock', value: '45', icon: Package, color: '#10B981' },
+        { label: 'Pending Orders', value: '12', icon: ShoppingBag, color: '#3B82F6' },
+        { label: 'Dispatched Today', value: '08', icon: Truck, color: '#8B5CF6' },
+    ];
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <View style={styles.header}>
+                    <View>
+                        <Text style={styles.welcomeText}>Distributor Portal,</Text>
+                        <Text style={styles.nameText}>Muller & Phipps</Text>
+                    </View>
+                </View>
+
+                {/* Status Cards */}
+                <View style={[styles.card, styles.alertCard]}>
+                    <AlertTriangle size={24} color={theme.colors.warning} />
+                    <View style={styles.alertContent}>
+                        <Text style={styles.alertTitle}>Low Stock Warning</Text>
+                        <Text style={styles.alertSubtitle}>Device inventory is below threshold in Karachi South.</Text>
+                    </View>
+                </View>
+
+                {/* Stats Grid */}
+                <View style={styles.statsGrid}>
+                    {stats.map((stat, index) => {
+                        const Icon = stat.icon;
+                        return (
+                            <View key={index} style={styles.statCard}>
+                                <View style={[styles.iconWrapper, { backgroundColor: stat.color + '10' }]}>
+                                    <Icon size={20} color={stat.color} />
+                                </View>
+                                <Text style={styles.statValue}>{stat.value}</Text>
+                                <Text style={styles.statLabel}>{stat.label}</Text>
+                            </View>
+                        );
+                    })}
+                </View>
+
+                {/* Recent Orders Link */}
+                <TouchableOpacity
+                    style={styles.sectionCard}
+                    onPress={() => navigation.navigate('Orders')}
+                >
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Incoming Orders</Text>
+                        <ArrowRight size={18} color={theme.colors.textLight} />
+                    </View>
+                    <View style={styles.orderItem}>
+                        <View style={styles.orderDot} />
+                        <Text style={styles.orderText}>ORD-7821 - Patient: Zahid Khan</Text>
+                    </View>
+                    <View style={styles.orderItem}>
+                        <View style={styles.orderDot} />
+                        <Text style={styles.orderText}>ORD-7819 - Patient: Maryam Ali</Text>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Inventory Action */}
+                <TouchableOpacity
+                    style={[styles.sectionCard, { borderLeftColor: theme.colors.primary, borderLeftWidth: 4 }]}
+                    onPress={() => navigation.navigate('Inventory')}
+                >
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Inventory Control</Text>
+                        <Package size={20} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.sectionDescription}>Update your device stock and manage allocations nationwide.</Text>
+                </TouchableOpacity>
+
+            </ScrollView>
+        </SafeAreaView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+        padding: theme.spacing.md,
+    },
+    header: {
+        marginBottom: theme.spacing.lg,
+    },
+    welcomeText: {
+        fontSize: 14,
+        color: theme.colors.textLight,
+        fontWeight: '600',
+    },
+    nameText: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    alertCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFBEB',
+        borderColor: '#FEF3C7',
+        borderWidth: 1,
+        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        marginBottom: theme.spacing.lg,
+        gap: theme.spacing.md,
+    },
+    alertContent: {
+        flex: 1,
+    },
+    alertTitle: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#92400E',
+    },
+    alertSubtitle: {
+        fontSize: 12,
+        color: '#B45309',
+        fontWeight: '500',
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: theme.colors.surface,
+        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+    iconWrapper: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    statValue: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    statLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: theme.colors.textLight,
+        textTransform: 'uppercase',
+    },
+    sectionCard: {
+        backgroundColor: theme.colors.surface,
+        padding: theme.spacing.lg,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        marginBottom: theme.spacing.md,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    sectionDescription: {
+        fontSize: 13,
+        color: theme.colors.textLight,
+        lineHeight: 20,
+        fontWeight: '500',
+    },
+    orderItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 8,
+    },
+    orderDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: theme.colors.primary,
+    },
+    orderText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: theme.colors.text,
+    }
+});
+
+export default DistributorDashboard;
