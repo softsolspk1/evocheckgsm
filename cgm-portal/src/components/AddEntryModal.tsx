@@ -18,6 +18,9 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [cities, setCities] = useState<any[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
+    const [patients, setPatients] = useState<any[]>([]);
+    const [kams, setKams] = useState<any[]>([]);
+    const [distributors, setDistributors] = useState<any[]>([]);
     const [formData, setFormData] = useState<any>({});
     const [error, setError] = useState('');
 
@@ -31,6 +34,12 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
 
             if (['Area', 'Distributor', 'KAM', 'User', 'Patient', 'Order'].includes(type)) {
                 fetchCities();
+            }
+
+            if (type === 'Order') {
+                fetchPatients();
+                fetchKams();
+                fetchDistributors();
             }
         }
     }, [isOpen, initialData, type]);
@@ -58,6 +67,36 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
             setAreas(data);
         } catch (err) {
             console.error('Failed to fetch areas', err);
+        }
+    };
+
+    const fetchPatients = async () => {
+        try {
+            const res = await fetch('/api/patients');
+            const data = await res.json();
+            setPatients(data);
+        } catch (err) {
+            console.error('Failed to fetch patients', err);
+        }
+    };
+
+    const fetchKams = async () => {
+        try {
+            const res = await fetch('/api/users');
+            const data = await res.json();
+            setKams(data.filter((u: any) => u.role === 'KAM'));
+        } catch (err) {
+            console.error('Failed to fetch KAMs', err);
+        }
+    };
+
+    const fetchDistributors = async () => {
+        try {
+            const res = await fetch('/api/distributors');
+            const data = await res.json();
+            setDistributors(data);
+        } catch (err) {
+            console.error('Failed to fetch distributors', err);
         }
     };
 
@@ -359,7 +398,96 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                 />
                                             </div>
                                             <div className="field-group">
-                                                <label className="label">City</label>
+                                                <label className="label">Email Address</label>
+                                                <input
+                                                    type="email"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="patient@email.com"
+                                                    value={formData.email || ''}
+                                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="label">City</label>
+                                            <select
+                                                required
+                                                disabled={isReadOnly}
+                                                className="input"
+                                                value={formData.cityId || ''}
+                                                onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
+                                            >
+                                                <option value="">Select City</option>
+                                                {cities.map((c: any) => (
+                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="label">Physical Address</label>
+                                            <textarea
+                                                disabled={isReadOnly}
+                                                className="input min-h-[80px]"
+                                                placeholder="Street, Block, City Section..."
+                                                value={formData.address || ''}
+                                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {type === 'Order' && (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Order Status</label>
+                                                <select
+                                                    required
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.status || 'PENDING'}
+                                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                                >
+                                                    <option value="PENDING">Pending</option>
+                                                    <option value="CONFIRMED">Confirmed</option>
+                                                    <option value="PROCESSING">Processing</option>
+                                                    <option value="DISPATCHED">Dispatched</option>
+                                                    <option value="DELIVERED">Delivered</option>
+                                                    <option value="CANCELLED">Cancelled</option>
+                                                    <option value="COMPLETED">Completed</option>
+                                                </select>
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Associated Patient</label>
+                                                <select
+                                                    required
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.patientId || ''}
+                                                    onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                                                >
+                                                    <option value="">Select Patient</option>
+                                                    {patients.map((p) => (
+                                                        <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Doctor Name</label>
+                                                <input
+                                                    type="text"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Dr. Consultant"
+                                                    value={formData.doctorName || ''}
+                                                    onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Dispatch City</label>
                                                 <select
                                                     required
                                                     disabled={isReadOnly}
@@ -368,8 +496,38 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                     onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
                                                 >
                                                     <option value="">Select City</option>
-                                                    {cities.map((c) => (
+                                                    {cities.map((c: any) => (
                                                         <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Assigned KAM</label>
+                                                <select
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.kamId || ''}
+                                                    onChange={(e) => setFormData({ ...formData, kamId: e.target.value })}
+                                                >
+                                                    <option value="">Select KAM</option>
+                                                    {kams.map((k) => (
+                                                        <option key={k.id} value={k.id}>{k.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Assigned Distributor</label>
+                                                <select
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.distributorId || ''}
+                                                    onChange={(e) => setFormData({ ...formData, distributorId: e.target.value })}
+                                                >
+                                                    <option value="">Select Distributor</option>
+                                                    {distributors.map((d) => (
+                                                        <option key={d.id} value={d.id}>{d.name}</option>
                                                     ))}
                                                 </select>
                                             </div>

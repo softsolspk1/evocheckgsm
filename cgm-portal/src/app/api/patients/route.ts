@@ -20,6 +20,8 @@ export async function POST(req: Request) {
             data: {
                 name: body.name,
                 phone: body.phone,
+                email: body.email,
+                address: body.address,
                 cityId: body.cityId
             }
         });
@@ -37,6 +39,8 @@ export async function PUT(req: Request) {
             data: {
                 name: body.name,
                 phone: body.phone,
+                email: body.email,
+                address: body.address,
                 cityId: body.cityId
             }
         });

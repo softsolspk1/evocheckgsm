@@ -33,21 +33,30 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { patientName, patientPhone, cityId, kamId, distributorId, doctorName } = body;
+        const { patientId, patientName, patientPhone, cityId, kamId, distributorId, doctorName } = body;
 
         // Find or create patient
-        let patient = await prisma.patient.findFirst({
-            where: { phone: patientPhone }
-        });
+        let patient;
+        if (patientId) {
+            patient = await prisma.patient.findUnique({ where: { id: patientId } });
+        } else {
+            patient = await prisma.patient.findFirst({
+                where: { phone: patientPhone }
+            });
+
+            if (!patient) {
+                patient = await prisma.patient.create({
+                    data: {
+                        name: patientName,
+                        phone: patientPhone,
+                        cityId: cityId
+                    }
+                });
+            }
+        }
 
         if (!patient) {
-            patient = await prisma.patient.create({
-                data: {
-                    name: patientName,
-                    phone: patientPhone,
-                    cityId: cityId
-                }
-            });
+            return NextResponse.json({ error: 'Patient not found or could not be created' }, { status: 400 });
         }
 
         // Get or Create a creator (Fall back to a system user)
@@ -125,6 +134,7 @@ export async function PUT(req: Request) {
             where: { id: body.id },
             data: {
                 status: body.status,
+                patientId: body.patientId,
                 doctorName: body.doctorName,
                 cityId: body.cityId,
                 kamId: body.kamId,
