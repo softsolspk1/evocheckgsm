@@ -1,19 +1,31 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const kamId = searchParams.get('kamId');
+        const distributorId = searchParams.get('distributorId');
+
+        let where: any = {};
+        if (kamId) where.kamId = kamId;
+        if (distributorId) where.distributorId = distributorId;
+
         const orders = await prisma.order.findMany({
+            where,
             include: {
                 patient: true,
                 city: true,
                 kam: true,
-                distributor: true
+                distributor: true,
+                area: true,
+                postForm: true
             },
             orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(orders);
     } catch (error) {
+        console.error('Fetch orders error:', error);
         return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
     }
 }
@@ -60,8 +72,44 @@ export async function POST(req: Request) {
                 doctorName: doctorName,
                 status: 'PENDING',
                 createdById: creator.id
+            },
+            include: {
+                patient: true,
+                city: true
             }
         });
+
+        // Create Notifications
+        const notifications = [];
+        if (kamId) {
+            notifications.push({
+                userId: kamId,
+                title: 'New Order Assigned',
+                message: `You have a new order for ${patient.name} in ${order.city.name}.`,
+                type: 'ORDER_UPDATE'
+            });
+        }
+        if (distributorId) {
+            // Find a user associated with this distributor to notify
+            // The schema has Distributor model with users relation
+            const distributorUser = await prisma.user.findFirst({
+                where: { distributorId: distributorId }
+            });
+            if (distributorUser) {
+                notifications.push({
+                    userId: distributorUser.id,
+                    title: 'New Order Received',
+                    message: `New pending order for ${patient.name} in ${order.city.name}.`,
+                    type: 'ORDER_UPDATE'
+                });
+            }
+        }
+
+        if (notifications.length > 0) {
+            await prisma.notification.createMany({
+                data: notifications
+            });
+        }
 
         return NextResponse.json(order);
     } catch (error) {

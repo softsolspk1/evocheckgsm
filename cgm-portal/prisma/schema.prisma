@@ -25,6 +25,18 @@ model User {
   area          Area?        @relation(fields: [areaId], references: [id])
   city          City?        @relation(fields: [cityId], references: [id])
   distributor   Distributor? @relation(fields: [distributorId], references: [id])
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // 'STOCK_ALERT', 'ORDER_UPDATE', 'SYSTEM'
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model City {
@@ -153,6 +165,9 @@ enum Role {
 enum OrderStatus {
   PENDING
   CONFIRMED
+  PROCESSING
+  DISPATCHED
+  DELIVERED
   CANCELLED
   COMPLETED
 }

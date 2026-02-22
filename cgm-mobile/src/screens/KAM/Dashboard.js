@@ -4,28 +4,28 @@ import { ShoppingCart, Package, Users, TrendingUp, Plus } from 'lucide-react-nat
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
-const KAMDashboard = ({ navigation }) => {
+const KAMDashboard = ({ navigation, user }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [stats, setStats] = useState([
-        { label: 'Total Sales', value: '0', icon: TrendingUp, color: '#3B82F6' },
-        { label: 'Devices Installed', value: '0', icon: Package, color: '#10B981' },
-        { label: 'Active Patients', value: '0', icon: Users, color: '#8B5CF6' },
+        { label: 'Orders', value: '0', icon: TrendingUp, color: '#3B82F6', bgColor: '#E0F2FE' },
+        { label: 'Installed', value: '0', icon: Package, color: '#0EA5E9', bgColor: '#F0F9FF' },
+        { label: 'Patients', value: '0', icon: Users, color: '#0284C7', bgColor: '#E0F2FE' },
     ]);
 
     const fetchData = async () => {
         try {
-            const orders = await apiService.getOrders();
-            // In a real scenario, we'd filter by KAM ID and calculate stats
-            // For now, let's derive some stats from the orders
+            const params = user.role === 'KAM' ? { kamId: user.id } : {};
+            const orders = await apiService.getOrders(params);
+
             const totalSales = orders.length;
             const delivered = orders.filter(o => o.status === 'DELIVERED').length;
-            const patients = new Set(orders.map(o => o.patientId)).size;
+            const patientsCount = new Set(orders.map(o => o.patientId)).size;
 
             setStats([
-                { label: 'Total Sales', value: totalSales.toString(), icon: TrendingUp, color: '#3B82F6' },
-                { label: 'Devices Installed', value: delivered.toString(), icon: Package, color: '#10B981' },
-                { label: 'Active Patients', value: patients.toString(), icon: Users, color: '#8B5CF6' },
+                { label: 'Orders', value: totalSales.toString(), icon: TrendingUp, color: '#3B82F6', bgColor: '#FFFFFF' },
+                { label: 'Installed', value: delivered.toString(), icon: Package, color: '#0EA5E9', bgColor: '#F0F9FF' },
+                { label: 'Patients', value: patientsCount.toString(), icon: Users, color: '#0284C7', bgColor: '#FFFFFF' },
             ]);
         } catch (error) {
             console.error('Fetch error:', error);
@@ -37,7 +37,7 @@ const KAMDashboard = ({ navigation }) => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -62,11 +62,8 @@ const KAMDashboard = ({ navigation }) => {
                 <View style={styles.header}>
                     <View>
                         <Text style={styles.welcomeText}>Assalam-o-Alaikum,</Text>
-                        <Text style={styles.nameText}>Shahid Mehmood</Text>
+                        <Text style={styles.nameText}>{user?.name || 'KAM'}</Text>
                     </View>
-                    <TouchableOpacity style={styles.notificationBtn} onPress={() => navigation.navigate('Form')}>
-                        <Plus size={24} color={theme.colors.primary} />
-                    </TouchableOpacity>
                 </View>
 
                 {/* Stats Grid */}
@@ -74,9 +71,9 @@ const KAMDashboard = ({ navigation }) => {
                     {stats.map((stat, index) => {
                         const Icon = stat.icon;
                         return (
-                            <View key={index} style={styles.statCard}>
-                                <View style={[styles.iconWrapper, { backgroundColor: stat.color + '10' }]}>
-                                    <Icon size={20} color={stat.color} />
+                            <View key={index} style={[styles.statCard, { backgroundColor: stat.bgColor }]}>
+                                <View style={[styles.iconWrapper, { backgroundColor: stat.color + '20' }]}>
+                                    <Icon size={18} color={stat.color} />
                                 </View>
                                 <Text style={styles.statValue}>{stat.value}</Text>
                                 <Text style={styles.statLabel}>{stat.label}</Text>
@@ -91,26 +88,46 @@ const KAMDashboard = ({ navigation }) => {
                     <View style={styles.actionRow}>
                         <TouchableOpacity
                             style={styles.actionCard}
-                            onPress={() => navigation.navigate('Orders')}
+                            onPress={() => navigation.navigate('OrderForm')}
                         >
-                            <ShoppingCart size={24} color={theme.colors.primary} />
+                            <View style={styles.actionIconBg}>
+                                <ShoppingCart size={22} color={theme.colors.primary} />
+                            </View>
                             <Text style={styles.actionText}>Place Order</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.actionCard}
                             onPress={() => navigation.navigate('Form')}
                         >
-                            <Plus size={24} color={theme.colors.primary} />
+                            <View style={styles.actionIconBg}>
+                                <Plus size={22} color={theme.colors.primary} />
+                            </View>
                             <Text style={styles.actionText}>Submit Form</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Performance Chart Placeholder */}
+                {/* Sales Velocity */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Sales Velocity</Text>
-                    <View style={styles.chartPlaceholder}>
-                        <Text style={styles.placeholderText}>[ Analytics Visualization ]</Text>
+                    <View style={styles.velocityCard}>
+                        <View style={styles.velocityHeader}>
+                            <View>
+                                <Text style={styles.velocityValue}>+12.5%</Text>
+                                <Text style={styles.velocitySub}>Performance this week</Text>
+                            </View>
+                            <TrendingUp size={24} color={theme.colors.success} />
+                        </View>
+                        <View style={styles.barChart}>
+                            {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
+                                <View key={i} style={[styles.bar, { height: h }]} />
+                            ))}
+                        </View>
+                        <View style={styles.chartLabels}>
+                            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => (
+                                <Text key={i} style={styles.chartLabel}>{l}</Text>
+                            ))}
+                        </View>
                     </View>
                 </View>
             </ScrollView>
@@ -190,48 +207,67 @@ const styles = StyleSheet.create({
         color: theme.colors.textLight,
         textTransform: 'uppercase',
     },
-    section: {
-        marginBottom: theme.spacing.lg,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '900',
-        color: theme.colors.secondary,
-        marginBottom: theme.spacing.sm,
-    },
-    actionRow: {
-        flexDirection: 'row',
-        gap: theme.spacing.md,
-    },
-    actionCard: {
-        flex: 1,
-        backgroundColor: theme.colors.surface,
+    velocityCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         padding: theme.spacing.lg,
-        borderRadius: theme.borderRadius.md,
-        alignItems: 'center',
         borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 1,
     },
-    actionText: {
-        marginTop: theme.spacing.sm,
+    velocityHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    velocityValue: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: theme.colors.success,
+    },
+    velocitySub: {
         fontSize: 12,
-        fontWeight: '800',
-        color: theme.colors.text,
+        color: theme.colors.textLight,
+        fontWeight: '600',
     },
-    chartPlaceholder: {
-        height: 200,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.lg,
+    barChart: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        height: 100,
+        paddingHorizontal: 10,
+    },
+    bar: {
+        width: 12,
+        backgroundColor: '#BAE6FD',
+        borderRadius: 6,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+    },
+    chartLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        marginTop: 10,
+    },
+    chartLabel: {
+        fontSize: 10,
+        color: '#94A3B8',
+        fontWeight: '800',
+    },
+    actionIconBg: {
+        width: 48,
+        height: 48,
+        backgroundColor: '#F0F9FF',
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        borderStyle: 'dashed',
-    },
-    placeholderText: {
-        color: theme.colors.textLight,
-        fontWeight: '700',
-        fontSize: 12,
+        marginBottom: 8,
     }
 });
 

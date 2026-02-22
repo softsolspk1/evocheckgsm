@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator,
-    TextInput, RefreshControl
+    TextInput, RefreshControl, Alert
 } from 'react-native';
 import { ShoppingBag, Search, MapPin, MessageCircle, Clock } from 'lucide-react-native';
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
-const DistributorOrders = () => {
+const DistributorOrders = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [orders, setOrders] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     const fetchData = async () => {
         try {
-            const data = await apiService.getOrders();
+            const params = { distributorId: user.distributorId };
+            const data = await apiService.getOrders(params);
             setOrders(data);
         } catch (error) {
             console.error('Fetch error:', error);
@@ -28,7 +30,25 @@ const DistributorOrders = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
+
+    const handleAccept = async (orderId) => {
+        try {
+            await apiService.updateOrder(orderId, 'PROCESSING');
+            fetchData();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to accept order');
+        }
+    };
+
+    const handleDispatch = async (orderId) => {
+        try {
+            await apiService.updateOrder(orderId, 'DISPATCHED');
+            fetchData();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to dispatch order');
+        }
+    };
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -41,14 +61,15 @@ const DistributorOrders = () => {
             case 'PROCESSING': return '#3B82F6';
             case 'DELIVERED': return '#10B981';
             case 'DISPATCHED': return '#8B5CF6';
+            case 'CANCELLED': return '#EF4444';
             default: return theme.colors.textLight;
         }
     };
 
     const filteredOrders = orders.filter(o =>
         o.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.cityName?.toLowerCase().includes(searchTerm.toLowerCase())
+        o.patient?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.city?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading && !refreshing) {
@@ -65,7 +86,7 @@ const DistributorOrders = () => {
                 <View style={styles.searchBar}>
                     <Search size={18} color={theme.colors.textLight} />
                     <TextInput
-                        placeholder="Search by ID, Patient or City..."
+                        placeholder="Search shipments..."
                         style={styles.searchInput}
                         placeholderTextColor={theme.colors.textLight}
                         value={searchTerm}
@@ -81,18 +102,22 @@ const DistributorOrders = () => {
                 <Text style={styles.sectionLabel}>INCOMING SHIPMENTS</Text>
 
                 {filteredOrders.length > 0 ? filteredOrders.map((order) => (
-                    <View key={order.id} style={styles.orderCard}>
+                    <TouchableOpacity
+                        key={order.id}
+                        style={styles.orderCard}
+                        onPress={() => setSelectedOrder(order)}
+                    >
                         <View style={styles.cardHeader}>
                             <View style={styles.orderIdBox}>
                                 <ShoppingBag size={14} color={theme.colors.primary} />
-                                <Text style={styles.orderId}>{order.id}</Text>
+                                <Text style={styles.orderId}>ID: {order.id.split('-')[0].toUpperCase()}</Text>
                             </View>
-                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) + '20' }]}>
+                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) + '15' }]}>
                                 <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</Text>
                             </View>
                         </View>
 
-                        <Text style={styles.patientName}>{order.patientName || 'Anonymous'}</Text>
+                        <Text style={styles.patientName}>{order.patient?.name || 'Anonymous'}</Text>
 
                         <View style={styles.detailRow}>
                             <Clock size={12} color={theme.colors.textLight} />
@@ -101,23 +126,28 @@ const DistributorOrders = () => {
 
                         <View style={styles.locationRow}>
                             <MapPin size={12} color={theme.colors.textLight} />
-                            <Text style={styles.locationText}>{order.cityName || 'N/A'}</Text>
+                            <Text style={styles.locationText}>{order.city?.name || 'N/A'}</Text>
                         </View>
 
                         <View style={styles.actionRow}>
-                            {order.status === 'PENDING' && (
-                                <TouchableOpacity style={styles.primaryAction}>
+                            {order.status === 'PENDING' ? (
+                                <TouchableOpacity style={styles.primaryAction} onPress={() => handleAccept(order.id)}>
                                     <Text style={styles.primaryActionText}>Accept Order</Text>
                                 </TouchableOpacity>
+                            ) : order.status === 'PROCESSING' ? (
+                                <TouchableOpacity style={[styles.primaryAction, { backgroundColor: '#8B5CF6' }]} onPress={() => handleDispatch(order.id)}>
+                                    <Text style={styles.primaryActionText}>Dispatch Now</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={styles.statusInfo}>
+                                    <Text style={styles.statusInfoText}>Order is being handled</Text>
+                                </View>
                             )}
-                            <TouchableOpacity style={styles.secondaryAction}>
-                                <MessageCircle size={18} color={theme.colors.textLight} />
-                            </TouchableOpacity>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 )) : (
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>No orders found.</Text>
+                        <Text style={styles.emptyText}>No shipments found.</Text>
                     </View>
                 )}
             </ScrollView>
@@ -250,15 +280,20 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '800',
     },
-    secondaryAction: {
-        width: 40,
+    statusInfo: {
+        flex: 1,
         height: 40,
-        backgroundColor: theme.colors.background,
+        backgroundColor: '#F8FAFC',
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderColor: '#E2E8F0',
+    },
+    statusInfoText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: theme.colors.textLight,
     },
     emptyState: {
         padding: 40,

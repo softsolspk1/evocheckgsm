@@ -4,40 +4,44 @@ import { Package, ShoppingBag, Truck, AlertTriangle, ArrowRight } from 'lucide-r
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
-const DistributorDashboard = ({ navigation }) => {
+const DistributorDashboard = ({ navigation, user }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [stats, setStats] = useState([
         { label: 'Available Stock', value: '0', icon: Package, color: '#10B981' },
         { label: 'Pending Orders', value: '0', icon: ShoppingBag, color: '#3B82F6' },
-        { label: 'Dispatched Today', value: '0', icon: Truck, color: '#8B5CF6' },
+        { label: 'Dispatched', value: '0', icon: Truck, color: '#8B5CF6' },
     ]);
     const [recentOrders, setRecentOrders] = useState([]);
     const [lowStockAlert, setLowStockAlert] = useState(null);
 
     const fetchData = async () => {
         try {
+            const distParam = { distributorId: user.distributorId || user.id };
             const [orders, inventory] = await Promise.all([
-                apiService.getOrders(),
-                apiService.getInventory()
+                apiService.getOrders(distParam),
+                apiService.getInventory(distParam)
             ]);
 
-            // Calculate Distributor Specific Stats (Mocking distributor filtering)
-            const availableStock = inventory.reduce((acc, curr) => acc + curr.availableStock, 0);
+            // Calculate Distributor Specific Stats
+            let availableStock = 0;
+            if (inventory.length > 0) {
+                availableStock = inventory.reduce((acc, curr) => acc + curr.availableStock, 0);
+            }
+
             const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
-            const dispatchedToday = orders.filter(o => o.status === 'DELIVERED').length; // Mock today filter
+            const dispatchedOrders = orders.filter(o => o.status === 'DELIVERED').length;
 
             setStats([
                 { label: 'Available Stock', value: availableStock.toString(), icon: Package, color: '#10B981' },
                 { label: 'Pending Orders', value: pendingOrders.toString(), icon: ShoppingBag, color: '#3B82F6' },
-                { label: 'Dispatched Today', value: dispatchedToday.toString(), icon: Truck, color: '#8B5CF6' },
+                { label: 'Dispatched', value: dispatchedOrders.toString(), icon: Truck, color: '#8B5CF6' },
             ]);
 
-            setRecentOrders(orders.slice(0, 2));
+            setRecentOrders(orders.slice(0, 3));
 
-            const lowStockItem = inventory.find(item => item.availableStock < 10);
-            if (lowStockItem) {
-                setLowStockAlert(`Low stock in ${lowStockItem.cityName} (${lowStockItem.availableStock} left)`);
+            if (availableStock < 10 && inventory.length > 0) {
+                setLowStockAlert(`Low stock warning: Only ${availableStock} units remaining.`);
             } else {
                 setLowStockAlert(null);
             }
@@ -52,7 +56,7 @@ const DistributorDashboard = ({ navigation }) => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -63,7 +67,7 @@ const DistributorDashboard = ({ navigation }) => {
         return (
             <View style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={styles.loadingText}>Loading Logistics...</Text>
+                <Text style={styles.loadingText}>Syncing Logistics...</Text>
             </View>
         );
     }
@@ -76,8 +80,8 @@ const DistributorDashboard = ({ navigation }) => {
             >
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.welcomeText}>Distributor Portal,</Text>
-                        <Text style={styles.nameText}>Muller & Phipps</Text>
+                        <Text style={styles.welcomeText}>Assalam-o-Alaikum,</Text>
+                        <Text style={styles.nameText}>{user?.name || 'Distributor'}</Text>
                     </View>
                 </View>
 
@@ -119,8 +123,10 @@ const DistributorDashboard = ({ navigation }) => {
                     </View>
                     {recentOrders.length > 0 ? recentOrders.map((order, idx) => (
                         <View key={idx} style={styles.orderItem}>
-                            <View style={styles.orderDot} />
-                            <Text style={styles.orderText}>{order.id || 'ORD-NEW'} - Patient: {order.patientName || 'Anonymous'}</Text>
+                            <View style={[styles.orderDot, { backgroundColor: order.status === 'PENDING' ? theme.colors.primary : theme.colors.success }]} />
+                            <Text style={styles.orderText} numberOfLines={1}>
+                                {order.id.split('-')[0].toUpperCase()} • {order.patient?.name || 'Anonymous'}
+                            </Text>
                         </View>
                     )) : (
                         <Text style={styles.noData}>No pending orders</Text>
@@ -136,7 +142,7 @@ const DistributorDashboard = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>Inventory Control</Text>
                         <Package size={20} color={theme.colors.primary} />
                     </View>
-                    <Text style={styles.sectionDescription}>Update your device stock and manage allocations nationwide.</Text>
+                    <Text style={styles.sectionDescription}>Monitor your stock levels and replenish devices to ensure uninterrupted patient supply.</Text>
                 </TouchableOpacity>
 
             </ScrollView>

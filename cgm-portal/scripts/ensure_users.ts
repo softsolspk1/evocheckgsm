@@ -33,20 +33,33 @@ async function main() {
     });
     console.log('Sub Admin: subadmin@pharmevo.biz / password123');
 
-    // 3. KAM (Example from import)
-    // Shahid Mehmood (Faisalabad)
+    // 3. KAM 1
     await prisma.user.upsert({
-        where: { email: 's01090176@pharmevo.biz' },
+        where: { email: 'kam1@pharmevo.biz' },
         update: { password: 'password123', role: 'KAM' },
         create: {
-            email: 's01090176@pharmevo.biz',
-            name: 'Shahid Mehmood',
+            email: 'kam1@pharmevo.biz',
+            name: 'KAM 1',
             password: 'password123',
             role: 'KAM',
-            employeeCode: 'S01090176'
+            employeeCode: 'KAM001'
         }
     });
-    console.log('KAM (Faisalabad): s01090176@pharmevo.biz / password123');
+    console.log('KAM 1: kam1@pharmevo.biz / password123');
+
+    // 4. Distributor 1
+    await prisma.user.upsert({
+        where: { email: 'distributor1@pharmevo.biz' },
+        update: { password: 'password123', role: 'DISTRIBUTOR' },
+        create: {
+            email: 'distributor1@pharmevo.biz',
+            name: 'Distributor 1',
+            password: 'password123',
+            role: 'DISTRIBUTOR',
+            employeeCode: 'DIST001'
+        }
+    });
+    console.log('Distributor 1: distributor1@pharmevo.biz / password123');
 
     console.log('User provisioning complete!');
 }

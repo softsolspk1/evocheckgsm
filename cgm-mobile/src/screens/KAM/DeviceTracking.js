@@ -8,23 +8,27 @@ import { User, MapPin, Calendar, CheckCircle2, AlertCircle } from 'lucide-react-
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
-const DeviceTracking = () => {
+const DeviceTracking = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [installations, setInstallations] = useState([]);
 
     const fetchData = async () => {
         try {
-            const orders = await apiService.getOrders();
-            // In a real scenario, we'd filter for "Delivered" or "Installed" status
-            const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').map(o => ({
-                id: o.id,
-                patient: o.patientName || 'Anonymous',
-                area: o.areaName || 'Main Center',
-                city: o.cityName || 'N/A',
-                date: new Date(o.updatedAt).toLocaleDateString(),
-                status: 'Completed'
-            }));
+            const params = user.role === 'KAM' ? { kamId: user.id } : {};
+            const orders = await apiService.getOrders(params);
+
+            // Map delivered orders to installation history
+            const deliveredOrders = orders
+                .filter(o => o.status === 'DELIVERED')
+                .map(o => ({
+                    id: o.id,
+                    patient: o.patient?.name || 'Anonymous',
+                    area: o.area?.name || 'Main Center',
+                    city: o.city?.name || 'N/A',
+                    date: new Date(o.updatedAt).toLocaleDateString(),
+                    status: 'Completed'
+                }));
             setInstallations(deliveredOrders);
         } catch (error) {
             console.error('Fetch error:', error);
@@ -36,7 +40,7 @@ const DeviceTracking = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const onRefresh = () => {
         setRefreshing(true);

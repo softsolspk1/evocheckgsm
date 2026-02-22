@@ -4,6 +4,7 @@ import {
     TouchableOpacity, Image, KeyboardAvoidingView,
     Platform, ActivityIndicator, Alert
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Mail, Lock, ArrowRight } from 'lucide-react-native';
 import { theme } from '../theme';
 import { apiService } from '../services/api';
@@ -22,6 +23,7 @@ const LoginScreen = ({ onLogin }) => {
         setLoading(true);
         try {
             const userData = await apiService.login(email, password);
+            await AsyncStorage.setItem('user', JSON.stringify(userData));
             onLogin(userData);
         } catch (error) {
             Alert.alert('Authentication Failed', error.message || 'Please check your credentials.');
@@ -39,7 +41,7 @@ const LoginScreen = ({ onLogin }) => {
                 <View style={styles.logoContainer}>
                     <View style={styles.logoWrapper}>
                         <Image
-                            source={{ uri: 'https://pharmevo.biz/wp-content/uploads/2021/05/logo.png' }}
+                            source={require('../../assets/logo.png')}
                             style={styles.logo}
                             resizeMode="contain"
                         />
@@ -48,7 +50,7 @@ const LoginScreen = ({ onLogin }) => {
                 </View>
 
                 <View style={styles.header}>
-                    <Text style={styles.title}>EvoPulse Connect</Text>
+                    <Text style={styles.title}>CGM APP</Text>
                     <Text style={styles.subtitle}>Enter your credentials to access the ecosystem.</Text>
                 </View>
 
@@ -102,6 +104,7 @@ const LoginScreen = ({ onLogin }) => {
 
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>Secure Instance • © 2026 PharmEvo</Text>
+                    <Text style={[styles.footerText, { marginTop: 4, color: theme.colors.primary }]}>Developed by Softsols - Digital AI Solution</Text>
                 </View>
             </View>
         </KeyboardAvoidingView>

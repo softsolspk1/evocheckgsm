@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "cgm-mobile",
+    "name": "CGM APP",
     "slug": "cgm-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -16,14 +16,21 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pharmevo.evopulse",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "90207f3f-2a64-4788-ab21-2f404a343d25"
+      }
+    },
+    "owner": "kashif009"
   }
 }

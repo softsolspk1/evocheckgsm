@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator,
-    TextInput, RefreshControl
+    TextInput, RefreshControl, Modal
 } from 'react-native';
-import { ShoppingCart, Search, Plus, Package, Clock } from 'lucide-react-native';
+import { ShoppingCart, Search, Plus, Package, Clock, X, MapPin, User, ChevronRight } from 'lucide-react-native';
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
-const KAMOrders = ({ navigation }) => {
+const KAMOrders = ({ navigation, user }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [orders, setOrders] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     const fetchData = async () => {
         try {
-            const data = await apiService.getOrders();
+            const params = user.role === 'KAM' ? { kamId: user.id } : {};
+            const data = await apiService.getOrders(params);
             setOrders(data);
         } catch (error) {
             console.error('Fetch error:', error);
@@ -28,7 +30,7 @@ const KAMOrders = ({ navigation }) => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -38,17 +40,18 @@ const KAMOrders = ({ navigation }) => {
     const getStatusColor = (status) => {
         switch (status?.toUpperCase()) {
             case 'PENDING': return '#F59E0B';
-            case 'PROCESSING': return '#3B82F6';
+            case 'CONFIRMED': return '#0EA5E9';
             case 'DELIVERED': return '#10B981';
-            case 'DISPATCHED': return '#8B5CF6';
+            case 'CANCELLED': return '#EF4444';
+            case 'PROCESSING': return '#3B82F6';
             default: return theme.colors.textLight;
         }
     };
 
     const filteredOrders = orders.filter(o =>
         o.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.cityName?.toLowerCase().includes(searchTerm.toLowerCase())
+        o.patient?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.city?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading && !refreshing) {
@@ -72,7 +75,7 @@ const KAMOrders = ({ navigation }) => {
                         onChangeText={setSearchTerm}
                     />
                 </View>
-                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('Form')}>
+                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('OrderForm')}>
                     <Plus size={20} color="#fff" />
                 </TouchableOpacity>
             </View>
@@ -84,25 +87,33 @@ const KAMOrders = ({ navigation }) => {
                 <Text style={styles.sectionLabel}>MY SHIPMENTS</Text>
 
                 {filteredOrders.length > 0 ? filteredOrders.map((order) => (
-                    <TouchableOpacity key={order.id} style={styles.orderCard}>
+                    <TouchableOpacity
+                        key={order.id}
+                        style={styles.orderCard}
+                        onPress={() => setSelectedOrder(order)}
+                    >
                         <View style={styles.cardTop}>
                             <View style={styles.orderIdBox}>
                                 <Package size={14} color={theme.colors.primary} />
-                                <Text style={styles.orderId}>{order.id}</Text>
+                                <Text style={styles.orderId}>ID: {order.id.split('-')[0].toUpperCase()}</Text>
                             </View>
-                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) + '20' }]}>
+                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) + '15' }]}>
                                 <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</Text>
                             </View>
                         </View>
 
-                        <Text style={styles.patientName}>{order.patientName || 'Anonymous'}</Text>
+                        <Text style={styles.patientName}>{order.patient?.name || 'Anonymous'}</Text>
 
                         <View style={styles.cardFooter}>
+                            <View style={styles.infoRow}>
+                                <MapPin size={12} color={theme.colors.textLight} />
+                                <Text style={styles.infoText}>{order.city?.name || 'N/A'}</Text>
+                            </View>
                             <View style={styles.infoRow}>
                                 <Clock size={12} color={theme.colors.textLight} />
                                 <Text style={styles.infoText}>{new Date(order.createdAt).toLocaleDateString()}</Text>
                             </View>
-                            <Text style={styles.cityText}>{order.cityName || 'N/A'}</Text>
+                            <ChevronRight size={16} color={theme.colors.border} />
                         </View>
                     </TouchableOpacity>
                 )) : (
@@ -111,6 +122,84 @@ const KAMOrders = ({ navigation }) => {
                     </View>
                 )}
             </ScrollView>
+
+            {/* Order Detail Modal */}
+            <Modal
+                visible={!!selectedOrder}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Order Details</Text>
+                            <TouchableOpacity onPress={() => setSelectedOrder(null)}>
+                                <X size={24} color={theme.colors.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {selectedOrder && (
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>STATUS</Text>
+                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedOrder.status) + '15', alignSelf: 'flex-start' }]}>
+                                        <Text style={[styles.statusText, { color: getStatusColor(selectedOrder.status) }]}>{selectedOrder.status}</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>PATIENT INFORMATION</Text>
+                                    <View style={styles.detailRow}>
+                                        <User size={18} color={theme.colors.primary} />
+                                        <View>
+                                            <Text style={styles.detailValue}>{selectedOrder.patient?.name}</Text>
+                                            <Text style={styles.detailSub}>{selectedOrder.patient?.phone}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>LOCATION</Text>
+                                    <View style={styles.detailRow}>
+                                        <MapPin size={18} color={theme.colors.primary} />
+                                        <View>
+                                            <Text style={styles.detailValue}>{selectedOrder.city?.name}</Text>
+                                            <Text style={styles.detailSub}>{selectedOrder.area?.name || 'Main Center'}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>ORDER INFO</Text>
+                                    <Text style={styles.detailValue}>ID: {selectedOrder.id}</Text>
+                                    <Text style={styles.detailSub}>Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</Text>
+                                </View>
+
+                                {selectedOrder.distributor && (
+                                    <View style={styles.detailSection}>
+                                        <Text style={styles.detailLabel}>ASSIGNED DISTRIBUTOR</Text>
+                                        <Text style={styles.detailValue}>{selectedOrder.distributor.name}</Text>
+                                    </View>
+                                )}
+
+                                {selectedOrder.status !== 'DELIVERED' && (
+                                    <TouchableOpacity
+                                        style={styles.submitTrigger}
+                                        onPress={() => {
+                                            const order = selectedOrder;
+                                            setSelectedOrder(null);
+                                            navigation.navigate('Form', { order });
+                                        }}
+                                    >
+                                        <Plus size={20} color="#fff" />
+                                        <Text style={styles.submitTriggerText}>Submit Installation Form</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -204,49 +293,71 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         borderRadius: 4,
     },
-    statusText: {
-        fontSize: 10,
-        fontWeight: '900',
-        textTransform: 'uppercase',
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
     },
-    patientName: {
-        fontSize: 16,
-        fontWeight: '900',
-        color: theme.colors.secondary,
-        marginBottom: 12,
+    modalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        padding: theme.spacing.xl,
+        maxHeight: '80%',
     },
-    cardFooter: {
+    modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.border,
-        paddingTop: 10,
+        marginBottom: theme.spacing.xl,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+        paddingBottom: 15,
     },
-    infoRow: {
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    detailSection: {
+        marginBottom: 20,
+    },
+    detailLabel: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: theme.colors.textLight,
+        marginBottom: 8,
+        letterSpacing: 1,
+    },
+    detailRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 12,
     },
-    infoText: {
+    detailValue: {
+        fontSize: 16,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    detailSub: {
         fontSize: 12,
         color: theme.colors.textLight,
         fontWeight: '600',
     },
-    cityText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: theme.colors.text,
-    },
-    emptyState: {
-        padding: 40,
+    submitTrigger: {
+        backgroundColor: theme.colors.primary,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 20,
+        gap: 10,
     },
-    emptyText: {
-        color: theme.colors.textLight,
-        fontSize: 13,
-        fontWeight: '600',
-        fontStyle: 'italic',
+    submitTriggerText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '900',
     }
 });
 

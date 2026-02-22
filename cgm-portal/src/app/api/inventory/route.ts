@@ -1,9 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const distributorId = searchParams.get('distributorId');
+
+        let where: any = {};
+        if (distributorId) where.distributorId = distributorId;
+
         const inventory = await prisma.inventory.findMany({
+            where,
             include: {
                 distributor: {
                     include: {

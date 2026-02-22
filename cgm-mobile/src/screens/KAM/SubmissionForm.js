@@ -6,36 +6,58 @@ import {
 } from 'react-native';
 import { Calendar, Clock, User, Hash, MapPin, ChevronDown, Save } from 'lucide-react-native';
 import { theme } from '../../theme';
+import { apiService } from '../../services/api';
 
-const SubmissionForm = () => {
+const SubmissionForm = ({ route, navigation, user }) => {
+    const orderData = route.params?.order || {};
+
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        kamName: 'Shahid Mehmood',
-        kamCode: 'S01090176',
-        region: '',
-        city: '',
-        area: '',
+        orderId: orderData.id || '',
+        kamName: user?.name || 'Shahid Mehmood',
+        kamEmployeeCode: user?.employeeCode || 'S01090176',
+        region: orderData.city?.region || '',
+        city: orderData.city?.name || '',
+        area: orderData.area?.name || '',
         referredBy: '',
         referralCode: '',
         referralTeam: '',
-        doctorName: '',
+        doctorName: orderData.doctorName || '',
         doctorCode: '000000',
-        distributor: '',
-        patientName: '',
-        patientArea: '',
-        installedBy: '',
-        visitDate: new Date().toLocaleDateString(),
-        visitTime: new Date().toLocaleTimeString(),
-        deviceCount: '1',
-        patientEmail: '',
-        patientWhatsApp: '',
-        activationDate: '',
+        serviceProvider: orderData.distributor?.name || '',
+        patientName: orderData.patient?.name || '',
+        patientArea: orderData.area?.name || '',
+        sensorInstalledBy: user?.name || '',
+        visitDate: new Date().toISOString().split('T')[0],
+        visitTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        numberOfDevices: '1',
+        patientEmail: orderData.patient?.email || '',
+        patientWhatsApp: orderData.patient?.phone || '',
+        firstActivationDate: new Date().toISOString().split('T')[0],
         comments: '',
         serialNumber: '',
-        reminder: ''
+        reminder: false
     });
 
-    const handleSubmit = () => {
-        Alert.alert('Form Submitted', 'Data has been successfully synched with the ecosystem.');
+    const handleSubmit = async () => {
+        if (!formData.orderId) {
+            Alert.alert('Selection Required', 'Please start from an existing order to submit installation data.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await apiService.submitInstallation(formData);
+            Alert.alert(
+                'Submission Successful',
+                'Installation data has been synchronized with the ecosystem.',
+                [{ text: 'OK', onPress: () => navigation.goBack() }]
+            );
+        } catch (error) {
+            Alert.alert('Submission Failed', error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderInput = (label, key, placeholder, icon, keyboardType = 'default') => {
@@ -66,15 +88,22 @@ const SubmissionForm = () => {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
+                {!formData.orderId && (
+                    <View style={styles.warningBox}>
+                        <Text style={styles.warningText}>⚠️ Warning: No Order Selected. Please open an order from the "Orders" tab and click "Submit Installation".</Text>
+                    </View>
+                )}
+
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>1. Identity & Location</Text>
                     {renderInput('KAM/DE NAME', 'kamName', 'Name', User)}
-                    {renderInput('EMPLOYEE CODE', 'kamCode', 'Code', Hash)}
-                    {renderInput('REGION', 'region', 'Select Region', MapPin)}
-
-                    <View style={styles.row}>
-                        <View style={{ flex: 1 }}>{renderInput('CITY', 'city', 'Select City', ChevronDown)}</View>
-                        <View style={{ flex: 1 }}>{renderInput('AREA', 'area', 'Select Area', ChevronDown)}</View>
+                    {renderInput('EMPLOYEE CODE', 'kamEmployeeCode', 'Code', Hash)}
+                    <View style={{ opacity: 0.6 }}>
+                        {renderInput('REGION', 'region', 'Region', MapPin)}
+                        <View style={styles.row}>
+                            <View style={{ flex: 1 }}>{renderInput('CITY', 'city', 'City', MapPin)}</View>
+                            <View style={{ flex: 1 }}>{renderInput('AREA', 'area', 'Area', MapPin)}</View>
+                        </View>
                     </View>
                 </View>
 
@@ -89,7 +118,7 @@ const SubmissionForm = () => {
                     <Text style={styles.sectionTitle}>3. Clinical Information</Text>
                     {renderInput('DOCTOR NAME', 'doctorName', 'Dr. Name', User)}
                     {renderInput('DOCTOR CODE', 'doctorCode', '000000', Hash)}
-                    {renderInput('SERVICE PROVIDER (DISTRIBUTOR)', 'distributor', 'Select Distributor', MapPin)}
+                    {renderInput('SERVICE PROVIDER (DISTRIBUTOR)', 'serviceProvider', 'Select Distributor', MapPin)}
                 </View>
 
                 <View style={styles.section}>
@@ -102,16 +131,16 @@ const SubmissionForm = () => {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>5. Installation Details</Text>
-                    {renderInput('SENSOR INSTALLED BY', 'installedBy', 'Name')}
+                    {renderInput('SENSOR INSTALLED BY', 'sensorInstalledBy', 'Name')}
 
                     <View style={styles.row}>
-                        <View style={{ flex: 1 }}>{renderInput('VISIT DATE', 'visitDate', 'Date', Calendar)}</View>
-                        <View style={{ flex: 1 }}>{renderInput('VISIT TIME', 'visitTime', 'Time', Clock)}</View>
+                        <View style={{ flex: 1 }}>{renderInput('VISIT DATE', 'visitDate', 'YYYY-MM-DD', Calendar)}</View>
+                        <View style={{ flex: 1 }}>{renderInput('VISIT TIME', 'visitTime', 'HH:MM', Clock)}</View>
                     </View>
 
-                    {renderInput('NUMBER OF DEVICES', 'deviceCount', '1', Hash, 'numeric')}
+                    {renderInput('NUMBER OF DEVICES', 'numberOfDevices', '1', Hash, 'numeric')}
                     {renderInput('CGM SERIAL NUMBER', 'serialNumber', 'SN-XXXXX')}
-                    {renderInput('FIRST ACTIVATION DATE', 'activationDate', 'Date', Calendar)}
+                    {renderInput('FIRST ACTIVATION DATE', 'firstActivationDate', 'YYYY-MM-DD', Calendar)}
                 </View>
 
                 <View style={styles.section}>
@@ -132,9 +161,19 @@ const SubmissionForm = () => {
                     {renderInput('KAM REMINDER', 'reminder', 'Notes...')}
                 </View>
 
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                    <Save size={20} color="#fff" />
-                    <Text style={styles.submitText}>Submit Installation Data</Text>
+                <TouchableOpacity
+                    style={[styles.submitButton, loading && { opacity: 0.7 }]}
+                    onPress={handleSubmit}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <>
+                            <Save size={20} color="#fff" />
+                            <Text style={styles.submitText}>Submit Installation Data</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
@@ -179,6 +218,20 @@ const styles = StyleSheet.create({
         color: theme.colors.primary,
         marginBottom: theme.spacing.md,
         letterSpacing: 0.5,
+    },
+    warningBox: {
+        backgroundColor: '#FFFBEB',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#FEF3C7',
+    },
+    warningText: {
+        fontSize: 12,
+        color: '#B45309',
+        fontWeight: '700',
+        lineHeight: 18,
     },
     row: {
         flexDirection: 'row',

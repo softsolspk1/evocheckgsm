@@ -8,7 +8,7 @@ import { Package, Plus, History, ChevronRight, Save, X } from 'lucide-react-nati
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
-const DistributorInventory = () => {
+const DistributorInventory = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [inventoryList, setInventoryList] = useState([]);
@@ -18,7 +18,8 @@ const DistributorInventory = () => {
 
     const fetchData = async () => {
         try {
-            const data = await apiService.getInventory();
+            const params = { distributorId: user.distributorId || user.id };
+            const data = await apiService.getInventory(params);
             setInventoryList(data);
         } catch (error) {
             console.error('Fetch error:', error);
@@ -30,7 +31,7 @@ const DistributorInventory = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -45,9 +46,8 @@ const DistributorInventory = () => {
 
         setSubmitting(true);
         try {
-            // Mocking first distributor ID for mobile demo
-            const distributorId = inventoryList[0]?.id || 'dist-001';
-            await apiService.addInventory(distributorId, newDeviceCount);
+            const distributorId = user.distributorId || user.id;
+            await apiService.addInventory(distributorId, parseInt(newDeviceCount));
             Alert.alert('Success', `${newDeviceCount} devices added to inventory.`);
             setShowAddModal(false);
             setNewDeviceCount('');
