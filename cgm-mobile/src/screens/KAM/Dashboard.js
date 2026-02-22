@@ -97,7 +97,7 @@ const KAMDashboard = ({ navigation, user }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.actionCard}
-                            onPress={() => navigation.navigate('Form')}
+                            onPress={() => navigation.navigate('Installation')}
                         >
                             <View style={styles.actionIconBg}>
                                 <Plus size={22} color={theme.colors.primary} />

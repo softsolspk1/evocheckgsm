@@ -5,8 +5,8 @@ import {
     Alert, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { ShoppingBag, User, Phone, MapPin, Search, PlusCircle, Save } from 'lucide-react-native';
-import { theme } from './theme';
-import { apiService } from './services/api';
+import { theme } from '../theme';
+import { apiService } from '../services/api';
 
 const OrderForm = ({ navigation, user }) => {
     const [loading, setLoading] = useState(false);

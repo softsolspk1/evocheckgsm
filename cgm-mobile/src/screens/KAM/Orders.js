@@ -188,7 +188,7 @@ const KAMOrders = ({ navigation, user }) => {
                                         onPress={() => {
                                             const order = selectedOrder;
                                             setSelectedOrder(null);
-                                            navigation.navigate('Form', { order });
+                                            navigation.navigate('Installation', { order });
                                         }}
                                     >
                                         <Plus size={20} color="#fff" />
