@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator,
-    RefreshControl, Alert
+    RefreshControl, Alert, StatusBar
 } from 'react-native';
 import { Bell, Package, ShoppingBag, Clock, CheckCircle2, AlertTriangle, ChevronRight } from 'lucide-react-native';
 import { theme } from '../theme';
@@ -52,9 +52,9 @@ const NotificationsScreen = ({ user, navigation }) => {
 
     const getIcon = (type) => {
         switch (type) {
-            case 'STOCK_ALERT': return <AlertTriangle size={20} color={theme.colors.error} />;
-            case 'ORDER_UPDATE': return <ShoppingBag size={20} color={theme.colors.primary} />;
-            default: return <Bell size={20} color={theme.colors.secondary} />;
+            case 'STOCK_ALERT': return <AlertTriangle size={22} color="#B45309" />;
+            case 'ORDER_UPDATE': return <ShoppingBag size={22} color="#2563EB" />;
+            default: return <Bell size={22} color="#64748B" />;
         }
     };
 
@@ -68,17 +68,24 @@ const NotificationsScreen = ({ user, navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" />
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                showsVerticalScrollIndicator={false}
             >
+                <View style={styles.headerSection}>
+                    <Text style={styles.headerTitle}>Recent Alerts</Text>
+                    <Text style={styles.headerSub}>Stay updated with your activities</Text>
+                </View>
+
                 {notifications.length === 0 ? (
                     <View style={styles.emptyState}>
                         <View style={styles.emptyIconBg}>
-                            <Bell size={40} color={theme.colors.textLight} />
+                            <Bell size={40} color="#CBD5E1" />
                         </View>
-                        <Text style={styles.emptyTitle}>All caught up!</Text>
-                        <Text style={styles.emptySub}>No new notifications at the moment.</Text>
+                        <Text style={styles.emptyTitle}>All Clear!</Text>
+                        <Text style={styles.emptySub}>We'll notify you when something important happens.</Text>
                     </View>
                 ) : (
                     notifications.map((notif) => (
@@ -86,13 +93,17 @@ const NotificationsScreen = ({ user, navigation }) => {
                             key={notif.id}
                             style={[styles.notifCard, !notif.isRead && styles.unreadCard]}
                             onPress={() => handleMarkAsRead(notif.id)}
+                            activeOpacity={0.7}
                         >
-                            <View style={styles.notifIconWrapper}>
+                            <View style={[styles.notifIconWrapper, {
+                                backgroundColor: notif.type === 'STOCK_ALERT' ? '#FEF3C7' :
+                                    notif.type === 'ORDER_UPDATE' ? '#EFF6FF' : '#F1F5F9'
+                            }]}>
                                 {getIcon(notif.type)}
                             </View>
                             <View style={styles.notifContent}>
                                 <View style={styles.notifHeader}>
-                                    <Text style={styles.notifTitle}>{notif.title}</Text>
+                                    <Text style={styles.notifTitle} numberOfLines={1}>{notif.title}</Text>
                                     <Text style={styles.notifTime}>
                                         {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </Text>
@@ -122,21 +133,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
     },
     scrollContent: {
-        padding: 16,
+        padding: 20,
+    },
+    headerSection: {
+        marginBottom: 20,
+        paddingLeft: 4,
+    },
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#0F172A',
+        marginBottom: 4,
+    },
+    headerSub: {
+        fontSize: 13,
+        color: '#64748B',
+        fontWeight: '500',
     },
     notifCard: {
         flexDirection: 'row',
         backgroundColor: '#FFFFFF',
         padding: 16,
-        borderRadius: 16,
+        borderRadius: 20,
         marginBottom: 12,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: '#F1F5F9',
         shadowColor: '#64748B',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
         elevation: 2,
     },
     unreadCard: {
@@ -144,10 +170,9 @@ const styles = StyleSheet.create({
         borderColor: '#BAE6FD',
     },
     notifIconWrapper: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: '#F1F5F9',
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
@@ -162,51 +187,58 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     notifTitle: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '800',
-        color: theme.colors.secondary,
+        color: '#0F172A',
+        flex: 1,
+        marginRight: 8,
     },
     notifTime: {
         fontSize: 10,
-        fontWeight: '600',
-        color: theme.colors.textLight,
+        fontWeight: '700',
+        color: '#94A3B8',
+        textTransform: 'uppercase',
     },
     notifMessage: {
         fontSize: 13,
         color: '#64748B',
         lineHeight: 18,
+        fontWeight: '500',
     },
     unreadDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: '#3B82F6',
         marginLeft: 8,
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 100,
+        marginTop: 80,
     },
     emptyIconBg: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 90,
+        height: 90,
+        borderRadius: 45,
         backgroundColor: '#F1F5F9',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 20,
+        marginBottom: 24,
     },
     emptyTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '900',
-        color: theme.colors.secondary,
+        color: '#0F172A',
         marginBottom: 8,
     },
     emptySub: {
         fontSize: 14,
-        color: theme.colors.textLight,
+        color: '#64748B',
         textAlign: 'center',
+        paddingHorizontal: 40,
+        lineHeight: 20,
+        fontWeight: '500',
     }
 });
 

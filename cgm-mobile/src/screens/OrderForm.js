@@ -17,9 +17,15 @@ const OrderForm = ({ navigation, user }) => {
     const [formData, setFormData] = useState({
         patientName: '',
         patientPhone: '',
+        patientEmail: '',
+        patientAddress: '',
         cityId: '',
         distributorId: '',
         doctorName: '',
+        doctorCity: '',
+        prescription: '',
+        orderTo: 'PREMIER',
+        source: 'MOBILE',
         kamId: user?.id || ''
     });
 
@@ -45,8 +51,8 @@ const OrderForm = ({ navigation, user }) => {
 
     const handleSubmit = async () => {
         // Validation
-        if (!formData.patientName || !formData.patientPhone || !formData.cityId) {
-            Alert.alert('Fields Required', 'Patient Name, Phone and City are mandatory.');
+        if (!formData.patientName || !formData.patientPhone || !formData.cityId || !formData.orderTo) {
+            Alert.alert('Fields Required', 'Patient Name, Phone, City and Order To are mandatory.');
             return;
         }
 
@@ -136,6 +142,8 @@ const OrderForm = ({ navigation, user }) => {
                     <View style={styles.section}>
                         {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
                         {renderInput('PHONE NUMBER *', 'patientPhone', '03xx-xxxxxxx', Phone, 'phone-pad')}
+                        {renderInput('EMAIL ADDRESS', 'patientEmail', 'example@mail.com', User, 'email-address')}
+                        {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
                     </View>
 
                     <View style={styles.header}>
@@ -153,6 +161,44 @@ const OrderForm = ({ navigation, user }) => {
 
                     <View style={styles.section}>
                         {renderInput('DOCTOR NAME', 'doctorName', 'Dr. Name', Search)}
+                        {renderInput('DOCTOR CITY', 'doctorCity', 'City', MapPin)}
+                        {renderInput('PRESCRIPTION LINK', 'prescription', 'Link or filename', Search)}
+                    </View>
+
+                    <View style={styles.header}>
+                        <Text style={styles.subtitle}>ORDER DESTINATION</Text>
+                    </View>
+
+                    <View style={styles.section}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>ORDER TO *</Text>
+                            <View style={styles.selectionRow}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.selectionChip,
+                                        formData.orderTo === 'PREMIER' && styles.selectionChipActive
+                                    ]}
+                                    onPress={() => setFormData({ ...formData, orderTo: 'PREMIER' })}
+                                >
+                                    <Text style={[
+                                        styles.selectionChipText,
+                                        formData.orderTo === 'PREMIER' && styles.selectionChipTextActive
+                                    ]}>Premier</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.selectionChip,
+                                        formData.orderTo === 'SERVICE_PROVIDER' && styles.selectionChipActive
+                                    ]}
+                                    onPress={() => setFormData({ ...formData, orderTo: 'SERVICE_PROVIDER' })}
+                                >
+                                    <Text style={[
+                                        styles.selectionChipText,
+                                        formData.orderTo === 'SERVICE_PROVIDER' && styles.selectionChipTextActive
+                                    ]}>Service Provider</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
 
                     <TouchableOpacity

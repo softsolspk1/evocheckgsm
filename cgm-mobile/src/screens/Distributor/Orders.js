@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, View, Text, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator,
-    TextInput, RefreshControl, Alert
+    TextInput, RefreshControl, Alert, Modal
 } from 'react-native';
-import { ShoppingBag, Search, MapPin, MessageCircle, Clock } from 'lucide-react-native';
+import { ShoppingBag, Search, MapPin, MessageCircle, Clock, X, User, Package, ShoppingCart } from 'lucide-react-native';
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
@@ -151,6 +151,115 @@ const DistributorOrders = ({ user }) => {
                     </View>
                 )}
             </ScrollView>
+
+            {/* Order Detail Modal */}
+            <Modal
+                visible={!!selectedOrder}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Shipment Details</Text>
+                            <TouchableOpacity onPress={() => setSelectedOrder(null)}>
+                                <X size={24} color={theme.colors.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {selectedOrder && (
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>STATUS</Text>
+                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedOrder.status) + '15', alignSelf: 'flex-start' }]}>
+                                        <Text style={[styles.statusText, { color: getStatusColor(selectedOrder.status) }]}>{selectedOrder.status}</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>PATIENT INFORMATION</Text>
+                                    <View style={styles.detailRow}>
+                                        <User size={18} color={theme.colors.primary} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.detailValue}>{selectedOrder.patient?.name}</Text>
+                                            <Text style={styles.detailSub}>Phone: {selectedOrder.patient?.phone}</Text>
+                                            {selectedOrder.patient?.email && <Text style={styles.detailSub}>Email: {selectedOrder.patient?.email}</Text>}
+                                            {selectedOrder.patient?.address && <Text style={styles.detailSub}>Addr: {selectedOrder.patient?.address}</Text>}
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>LOCATION</Text>
+                                    <View style={styles.detailRow}>
+                                        <MapPin size={18} color={theme.colors.primary} />
+                                        <View>
+                                            <Text style={styles.detailValue}>{selectedOrder.city?.name}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>ORDER DESTINATION</Text>
+                                    <View style={styles.detailRow}>
+                                        <Package size={18} color={theme.colors.primary} />
+                                        <View>
+                                            <Text style={styles.detailValue}>{selectedOrder.orderTo || 'PREMIER'}</Text>
+                                            <Text style={styles.detailSub}>Target Service Channel</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>CLINICAL INFORMATION</Text>
+                                    <View style={styles.detailRow}>
+                                        <User size={18} color={theme.colors.primary} />
+                                        <View>
+                                            <Text style={styles.detailValue}>{selectedOrder.doctorName || 'N/A'}</Text>
+                                            <Text style={styles.detailSub}>Doctor Name</Text>
+                                        </View>
+                                    </View>
+                                    <View style={[styles.detailRow, { marginTop: 10 }]}>
+                                        <MapPin size={18} color={theme.colors.primary} />
+                                        <View>
+                                            <Text style={styles.detailValue}>{selectedOrder.doctorCity || 'N/A'}</Text>
+                                            <Text style={styles.detailSub}>Doctor City</Text>
+                                        </View>
+                                    </View>
+                                    {selectedOrder.prescription && (
+                                        <View style={[styles.detailRow, { marginTop: 10 }]}>
+                                            <ShoppingCart size={18} color={theme.colors.primary} />
+                                            <View>
+                                                <Text style={styles.detailValue}>{selectedOrder.prescription}</Text>
+                                                <Text style={styles.detailSub}>Prescription Ref</Text>
+                                            </View>
+                                        </View>
+                                    )}
+                                </View>
+
+                                <View style={styles.detailSection}>
+                                    <Text style={styles.detailLabel}>ORDER INFO</Text>
+                                    <Text style={styles.detailValue}>ID: {selectedOrder.id}</Text>
+                                    <Text style={styles.detailSub}>Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</Text>
+                                    <Text style={styles.detailSub}>Source: {selectedOrder.source || 'CSR'}</Text>
+                                </View>
+
+                                <View style={styles.actionRow}>
+                                    {selectedOrder.status === 'PENDING' ? (
+                                        <TouchableOpacity style={styles.primaryAction} onPress={() => { handleAccept(selectedOrder.id); setSelectedOrder(null); }}>
+                                            <Text style={styles.primaryActionText}>Accept Order</Text>
+                                        </TouchableOpacity>
+                                    ) : selectedOrder.status === 'PROCESSING' ? (
+                                        <TouchableOpacity style={[styles.primaryAction, { backgroundColor: '#8B5CF6' }]} onPress={() => { handleDispatch(selectedOrder.id); setSelectedOrder(null); }}>
+                                            <Text style={styles.primaryActionText}>Dispatch Now</Text>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -231,6 +340,57 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '900',
         textTransform: 'uppercase',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        padding: theme.spacing.xl,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xl,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+        paddingBottom: 15,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    detailSection: {
+        marginBottom: 20,
+    },
+    detailLabel: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: theme.colors.textLight,
+        marginBottom: 8,
+        letterSpacing: 1,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    detailValue: {
+        fontSize: 16,
+        fontWeight: '900',
+        color: theme.colors.secondary,
+    },
+    detailSub: {
+        fontSize: 12,
+        color: theme.colors.textLight,
+        fontWeight: '600',
     },
     patientName: {
         fontSize: 16,

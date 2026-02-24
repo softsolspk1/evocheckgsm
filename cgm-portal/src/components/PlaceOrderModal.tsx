@@ -16,10 +16,16 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
     const [formData, setFormData] = useState<any>({
         patientName: '',
         patientPhone: '',
+        patientEmail: '',
+        patientAddress: '',
         cityId: '',
         kamId: '',
         distributorId: '',
-        doctorName: ''
+        doctorName: '',
+        orderTo: 'PREMIER',
+        doctorCity: '',
+        prescription: '',
+        source: 'CSR'
     });
     const [error, setError] = useState('');
 
@@ -122,6 +128,25 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                                 />
                             </div>
+                            <div className="field-group">
+                                <label className="label">Patient Email</label>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    placeholder="patient@email.com"
+                                    value={formData.patientEmail}
+                                    onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
+                                />
+                            </div>
+                            <div className="field-group">
+                                <label className="label">Physical Address</label>
+                                <textarea
+                                    className="input min-h-[80px]"
+                                    placeholder="Full Address"
+                                    value={formData.patientAddress}
+                                    onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-4">
@@ -150,6 +175,61 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                                     onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
                                 />
                             </div>
+                            <div className="field-group">
+                                <label className="label">Doctor City</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="City for Doctor"
+                                    value={formData.doctorCity}
+                                    onChange={(e) => setFormData({ ...formData, doctorCity: e.target.value })}
+                                />
+                            </div>
+                            <div className="field-group">
+                                <label className="label">Prescription (FileName/Link)</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Link or Name"
+                                    value={formData.prescription}
+                                    onChange={(e) => setFormData({ ...formData, prescription: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 space-y-4">
+                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest px-1">Order Destination</h4>
+                        <div className="flex gap-6">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.orderTo === 'PREMIER' ? 'border-blue-500 bg-blue-500' : 'border-slate-300 group-hover:border-blue-400'}`}>
+                                    {formData.orderTo === 'PREMIER' && <div className="w-2 h-2 rounded-full bg-white" />}
+                                </div>
+                                <input
+                                    type="radio"
+                                    className="hidden"
+                                    name="orderTo"
+                                    value="PREMIER"
+                                    checked={formData.orderTo === 'PREMIER'}
+                                    onChange={() => setFormData({ ...formData, orderTo: 'PREMIER' })}
+                                />
+                                <span className={`text-sm font-bold ${formData.orderTo === 'PREMIER' ? 'text-blue-600' : 'text-slate-500'}`}>Premier</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.orderTo === 'SERVICE_PROVIDER' ? 'border-blue-500 bg-blue-500' : 'border-slate-300 group-hover:border-blue-400'}`}>
+                                    {formData.orderTo === 'SERVICE_PROVIDER' && <div className="w-2 h-2 rounded-full bg-white" />}
+                                </div>
+                                <input
+                                    type="radio"
+                                    className="hidden"
+                                    name="orderTo"
+                                    value="SERVICE_PROVIDER"
+                                    checked={formData.orderTo === 'SERVICE_PROVIDER'}
+                                    onChange={() => setFormData({ ...formData, orderTo: 'SERVICE_PROVIDER' })}
+                                />
+                                <span className={`text-sm font-bold ${formData.orderTo === 'SERVICE_PROVIDER' ? 'text-blue-600' : 'text-slate-500'}`}>Service Provider</span>
+                            </label>
                         </div>
                     </div>
 

@@ -46,6 +46,7 @@ export default function OrdersPage() {
         patientName: o.patient.name,
         cityName: o.city.name,
         kamName: o.kam?.name || 'Unassigned',
+        orderTo: o.orderTo,
         date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         rawDate: new Date(o.createdAt)
     })).filter((o: any) => {
@@ -86,6 +87,7 @@ export default function OrdersPage() {
         const wsData = displayOrders.map(o => ({
             "Order ID": `#${o.displayId}`,
             "Patient": o.patientName,
+            "Order To": o.orderTo,
             "City": o.cityName,
             "KAM": o.kamName,
             "Date": o.date,
@@ -105,10 +107,11 @@ export default function OrdersPage() {
 
         doc.autoTable({
             startY: 40,
-            head: [['Order ID', 'Patient', 'Location', 'KAM', 'Status', 'Date']],
+            head: [['Order ID', 'Patient', 'Order To', 'Location', 'KAM', 'Status', 'Date']],
             body: displayOrders.map((o: any) => [
                 `#${o.displayId}`,
                 o.patientName,
+                o.orderTo,
                 o.cityName,
                 o.kamName,
                 o.status,
@@ -197,6 +200,7 @@ export default function OrdersPage() {
                             <thead>
                                 <tr className="text-left border-b border-slate-100">
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]">Order Details</th>
+                                    <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]">Order To</th>
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]">Location</th>
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]">KAM Representative</th>
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] text-center">Status</th>
@@ -212,6 +216,11 @@ export default function OrdersPage() {
                                                 <User size={12} />
                                                 {order.patientName}
                                             </div>
+                                        </td>
+                                        <td className="py-5 px-2">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${order.orderTo === 'PREMIER' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
+                                                {order.orderTo || 'PREMIER'}
+                                            </span>
                                         </td>
                                         <td className="py-5 px-2">
                                             <div className="text-sm font-semibold text-slate-600 flex items-center gap-1">

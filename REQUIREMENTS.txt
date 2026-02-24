@@ -96,3 +96,20 @@ Mobile App Backend: Node JS
 
 Now ACT as a Senior Developer / Project Manager and Develop and Test Everything.
 
+
+
+IN KAM APP: 
+1) I need you to add Place an Order Form which is similar to Place New Order in Web Admin.
+2) The New Order form will link with the Button "Place Order" in Dashboard and also in Order Page "+" icon. When click on Place Order Button then the Place New Order form will be open and upon submission, the New Order Place which will be indicated in Web Admin, Distributor App and KAM App.
+3) I also noticed that when I close APP, it automatically Sign Out me. Make it SignIn always untill any User sign out.
+4) Add notifcation Icon to App and Also make Notifcation feature working. On Creation of any new order, the Notifcation send to relative KAM and Relative Distributor. 
+5) Change App Icon to /logo.png which show after installation of App.
+6) After KAM and Distributor Login, only related KAM and Distributor data showing not all data. Fix it
+Fix these and build new APK accordingly. 
+
+Web Admin:
+In Order Page /orders, when click on View and Edit then it shows details of Order.
+In Patient Page, when click on View and then it shows details of Patient.
+
+
+

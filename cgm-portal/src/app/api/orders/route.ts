@@ -33,7 +33,11 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { patientId, patientName, patientPhone, cityId, kamId, distributorId, doctorName } = body;
+        const {
+            patientId, patientName, patientPhone, patientEmail, patientAddress,
+            cityId, kamId, distributorId, doctorName,
+            orderTo, doctorCity, prescription, source
+        } = body;
 
         // Find or create patient
         let patient;
@@ -49,6 +53,8 @@ export async function POST(req: Request) {
                     data: {
                         name: patientName,
                         phone: patientPhone,
+                        email: patientEmail,
+                        address: patientAddress,
                         cityId: cityId
                     }
                 });
@@ -79,6 +85,10 @@ export async function POST(req: Request) {
                 kamId: kamId,
                 distributorId: distributorId,
                 doctorName: doctorName,
+                orderTo: orderTo || 'PREMIER',
+                doctorCity: doctorCity,
+                prescription: prescription,
+                source: source || 'CSR',
                 status: 'PENDING',
                 createdById: creator.id
             },
@@ -138,7 +148,10 @@ export async function PUT(req: Request) {
                 doctorName: body.doctorName,
                 cityId: body.cityId,
                 kamId: body.kamId,
-                distributorId: body.distributorId
+                distributorId: body.distributorId,
+                orderTo: body.orderTo,
+                doctorCity: body.doctorCity,
+                prescription: body.prescription
             }
         });
         return NextResponse.json(order);

@@ -33,6 +33,7 @@ const SubmissionForm = ({ route, navigation, user }) => {
         numberOfDevices: '1',
         patientEmail: orderData.patient?.email || '',
         patientWhatsApp: orderData.patient?.phone || '',
+        patientAddress: orderData.patient?.address || '',
         firstActivationDate: new Date().toISOString().split('T')[0],
         comments: '',
         serialNumber: '',
@@ -127,6 +128,7 @@ const SubmissionForm = ({ route, navigation, user }) => {
                     {renderInput('PATIENT AREA', 'patientArea', 'Area Name', MapPin)}
                     {renderInput('PATIENT EMAIL', 'patientEmail', 'email@example.com', null, 'email-address')}
                     {renderInput('WHATSAPP NUMBER', 'patientWhatsApp', '+92', null, 'phone-pad')}
+                    {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
                 </View>
 
                 <View style={styles.section}>

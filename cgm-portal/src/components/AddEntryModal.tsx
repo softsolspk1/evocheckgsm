@@ -459,20 +459,33 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                 </select>
                                             </div>
                                             <div className="field-group">
-                                                <label className="label">Associated Patient</label>
+                                                <label className="label">Order Destination</label>
                                                 <select
                                                     required
                                                     disabled={isReadOnly}
                                                     className="input"
-                                                    value={formData.patientId || ''}
-                                                    onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                                                    value={formData.orderTo || 'PREMIER'}
+                                                    onChange={(e) => setFormData({ ...formData, orderTo: e.target.value })}
                                                 >
-                                                    <option value="">Select Patient</option>
-                                                    {patients.map((p) => (
-                                                        <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
-                                                    ))}
+                                                    <option value="PREMIER">Premier</option>
+                                                    <option value="SERVICE_PROVIDER">Service Provider</option>
                                                 </select>
                                             </div>
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="label">Associated Patient</label>
+                                            <select
+                                                required
+                                                disabled={isReadOnly}
+                                                className="input"
+                                                value={formData.patientId || ''}
+                                                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                                            >
+                                                <option value="">Select Patient</option>
+                                                {patients.map((p) => (
+                                                    <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="field-group">
@@ -500,6 +513,30 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                         <option key={c.id} value={c.id}>{c.name}</option>
                                                     ))}
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Doctor City</label>
+                                                <input
+                                                    type="text"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Doctor's City"
+                                                    value={formData.doctorCity || ''}
+                                                    onChange={(e) => setFormData({ ...formData, doctorCity: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Prescription</label>
+                                                <input
+                                                    type="text"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Prescription Link/Name"
+                                                    value={formData.prescription || ''}
+                                                    onChange={(e) => setFormData({ ...formData, prescription: e.target.value })}
+                                                />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">

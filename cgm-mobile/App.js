@@ -42,22 +42,62 @@ const KAMTabs = ({ onSignOut, user, navigation }) => (
       },
       tabBarActiveTintColor: theme.colors.primary,
       tabBarInactiveTintColor: theme.colors.textLight,
-      tabBarStyle: { height: 85, paddingBottom: 25, paddingTop: 10 },
-      headerStyle: { backgroundColor: theme.colors.surface },
-      headerTitleStyle: { fontWeight: '900', color: theme.colors.secondary },
-      headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 20 }}
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <Bell size={20} color={theme.colors.secondary} />
-        </TouchableOpacity>
-      ),
+      tabBarStyle: {
+        height: 90,
+        paddingBottom: 30,
+        paddingTop: 10,
+        backgroundColor: theme.colors.background,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      tabBarLabelStyle: {
+        fontSize: 10,
+        fontWeight: '700',
+        marginBottom: -5,
+      },
+      headerStyle: {
+        backgroundColor: theme.colors.surface,
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+      },
+      headerTitleStyle: {
+        fontWeight: '900',
+        color: theme.colors.secondary,
+        fontSize: 18,
+      },
       headerRight: () => (
-        <TouchableOpacity onPress={onSignOut} style={{ marginRight: 20 }}>
-          <LogOut size={20} color={theme.colors.error} />
-        </TouchableOpacity>
-      )
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+          <TouchableOpacity
+            style={{
+              marginRight: 15,
+              padding: 8,
+              borderRadius: 12,
+              backgroundColor: theme.colors.surface
+            }}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Bell size={22} color={theme.colors.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onSignOut}
+            style={{
+              padding: 8,
+              borderRadius: 12,
+              backgroundColor: '#FEF2F2'
+            }}
+          >
+            <LogOut size={20} color={theme.colors.error} />
+          </TouchableOpacity>
+        </View>
+      ),
+      headerLeft: () => null,
     })}
   >
     <Tab.Screen name="Dashboard">
@@ -88,22 +128,62 @@ const DistributorTabs = ({ onSignOut, user, navigation }) => (
       },
       tabBarActiveTintColor: theme.colors.primary,
       tabBarInactiveTintColor: theme.colors.textLight,
-      tabBarStyle: { height: 85, paddingBottom: 25, paddingTop: 10 },
-      headerStyle: { backgroundColor: theme.colors.surface },
-      headerTitleStyle: { fontWeight: '900', color: theme.colors.secondary },
-      headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 20 }}
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <Bell size={20} color={theme.colors.secondary} />
-        </TouchableOpacity>
-      ),
+      tabBarStyle: {
+        height: 90,
+        paddingBottom: 30,
+        paddingTop: 10,
+        backgroundColor: theme.colors.background,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      tabBarLabelStyle: {
+        fontSize: 10,
+        fontWeight: '700',
+        marginBottom: -5,
+      },
+      headerStyle: {
+        backgroundColor: theme.colors.surface,
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+      },
+      headerTitleStyle: {
+        fontWeight: '900',
+        color: theme.colors.secondary,
+        fontSize: 18,
+      },
       headerRight: () => (
-        <TouchableOpacity onPress={onSignOut} style={{ marginRight: 20 }}>
-          <LogOut size={20} color={theme.colors.error} />
-        </TouchableOpacity>
-      )
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+          <TouchableOpacity
+            style={{
+              marginRight: 15,
+              padding: 8,
+              borderRadius: 12,
+              backgroundColor: theme.colors.surface
+            }}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Bell size={22} color={theme.colors.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onSignOut}
+            style={{
+              padding: 8,
+              borderRadius: 12,
+              backgroundColor: '#FEF2F2'
+            }}
+          >
+            <LogOut size={20} color={theme.colors.error} />
+          </TouchableOpacity>
+        </View>
+      ),
+      headerLeft: () => null,
     })}
   >
     <Tab.Screen name="Dashboard">
