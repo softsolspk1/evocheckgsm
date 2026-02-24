@@ -20,6 +20,7 @@ model User {
   distributorId String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  address       String?
   createdOrders Order[]      @relation("CreatedBy")
   ordersAsKam   Order[]      @relation("KamOrders")
   area          Area?        @relation(fields: [areaId], references: [id])
@@ -69,6 +70,7 @@ model Distributor {
   areaId    String
   area      Area        @relation(fields: [areaId], references: [id])
   city      City        @relation(fields: [cityId], references: [id])
+  type      OrderTo     @default(PREMIER)
   inventory Inventory[]
   orders    Order[]
   users     User[]

@@ -12,6 +12,7 @@ export default async function DistributorPage() {
         ...d,
         cityName: d.city?.name || 'Unknown',
         areaName: d.area?.name || 'Unknown',
+        typeLabel: d.type === 'PREMIER' ? 'Premier' : 'Service Provider',
         region: 'Pakistan',
     }));
 
@@ -19,6 +20,7 @@ export default async function DistributorPage() {
         { key: 'name', label: 'Distributor Name' },
         { key: 'cityName', label: 'City' },
         { key: 'areaName', label: 'Area' },
+        { key: 'typeLabel', label: 'Type' },
     ];
 
     return <MasterList title="Distributor" data={displayData} columns={columns} type="Distributor" />;

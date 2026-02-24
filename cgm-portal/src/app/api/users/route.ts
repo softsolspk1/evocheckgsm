@@ -23,6 +23,8 @@ export async function POST(req: Request) {
                 password: body.password, // In real app, hash this
                 role: body.role,
                 employeeCode: body.employeeCode,
+                phone: body.phone,
+                address: body.address,
                 cityId: body.cityId
             }
         });
@@ -43,6 +45,8 @@ export async function PUT(req: Request) {
                 email: body.email,
                 role: body.role,
                 employeeCode: body.employeeCode,
+                phone: body.phone,
+                address: body.address,
                 cityId: body.cityId
             }
         });

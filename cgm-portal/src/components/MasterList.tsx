@@ -16,14 +16,18 @@ const MasterList: React.FC<MasterListProps> = ({
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'ALL' | 'PREMIER' | 'SERVICE_PROVIDER'>('ALL');
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [modalMode, setModalMode] = useState<'ADD' | 'EDIT' | 'VIEW' | 'DELETE'>('ADD');
 
-    const filteredData = data.filter(item =>
-        Object.values(item).some(val =>
+    const filteredData = data.filter(item => {
+        const matchesSearch = Object.values(item).some(val =>
             String(val).toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    );
+        );
+        const matchesTab = activeTab === 'ALL' ||
+            (type === 'Distributor' && item.type === activeTab);
+        return matchesSearch && matchesTab;
+    });
 
     const openModal = (mode: 'ADD' | 'EDIT' | 'VIEW' | 'DELETE', item: any = null) => {
         setModalMode(mode);
@@ -47,6 +51,28 @@ const MasterList: React.FC<MasterListProps> = ({
                 )}
             </div>
 
+            {/* Filter Tabs for Distributor */}
+            {type === 'Distributor' && (
+                <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+                    {[
+                        { id: 'ALL', label: 'All Distrubutors' },
+                        { id: 'PREMIER', label: 'Premier' },
+                        { id: 'SERVICE_PROVIDER', label: 'Service Providers' }
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`px-6 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Content Card */}
             <div className="card">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
@@ -60,10 +86,6 @@ const MasterList: React.FC<MasterListProps> = ({
                             className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all"
                         />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-100 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-colors">
-                        <Filter size={18} />
-                        <span>Filter</span>
-                    </button>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -78,15 +100,21 @@ const MasterList: React.FC<MasterListProps> = ({
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {filteredData.length > 0 ? filteredData.map((item, idx) => (
-                                <tr key={item.id || idx} className="group transition-colors hover:bg-slate-50/50">
+                                <tr key={item.id || idx} className={`group transition-colors hover:bg-slate-50/50 ${type === 'Distributor' && item.type === 'PREMIER' ? 'border-l-4 border-l-blue-500' :
+                                    type === 'Distributor' && item.type === 'SERVICE_PROVIDER' ? 'border-l-4 border-l-amber-500' : ''
+                                    }`}>
                                     {columns.map(col => (
                                         <td key={col.key} className="py-5 px-2 text-sm font-bold text-slate-700">
                                             {col.key === 'role' ? (
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.role === 'SUPER_ADMIN' ? 'bg-indigo-100 text-indigo-700' :
-                                                        item.role === 'SUB_ADMIN' ? 'bg-blue-100 text-blue-700' :
-                                                            item.role === 'DISTRIBUTOR' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
+                                                    item.role === 'SUB_ADMIN' ? 'bg-blue-100 text-blue-700' :
+                                                        item.role === 'DISTRIBUTOR' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
                                                     }`}>
                                                     {item.role}
+                                                </span>
+                                            ) : col.key === 'typeLabel' ? (
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.type === 'PREMIER' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                    {item.typeLabel}
                                                 </span>
                                             ) : (
                                                 item[col.key] || '---'

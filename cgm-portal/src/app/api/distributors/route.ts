@@ -20,7 +20,8 @@ export async function POST(req: Request) {
             data: {
                 name: body.name,
                 cityId: body.cityId,
-                areaId: body.areaId
+                areaId: body.areaId,
+                type: body.type
             }
         });
         return NextResponse.json(distributor);
@@ -37,7 +38,8 @@ export async function PUT(req: Request) {
             data: {
                 name: body.name,
                 cityId: body.cityId,
-                areaId: body.areaId
+                areaId: body.areaId,
+                type: body.type
             }
         });
         return NextResponse.json(distributor);

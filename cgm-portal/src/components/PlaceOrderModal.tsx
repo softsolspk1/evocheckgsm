@@ -255,9 +255,11 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                                 onChange={(e) => setFormData({ ...formData, distributorId: e.target.value })}
                             >
                                 <option value="">Select Distributor (Optional)</option>
-                                {distributors.map((d) => (
-                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                ))}
+                                {distributors
+                                    .filter((d) => d.type === formData.orderTo)
+                                    .map((d) => (
+                                        <option key={d.id} value={d.id}>{d.name} ({d.city?.name})</option>
+                                    ))}
                             </select>
                         </div>
                     </div>

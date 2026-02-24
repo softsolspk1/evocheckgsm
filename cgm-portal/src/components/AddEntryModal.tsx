@@ -271,6 +271,27 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                 </select>
                                             </div>
                                         </div>
+                                        <div className="field-group">
+                                            <label className="label">Phone Number</label>
+                                            <input
+                                                type="text"
+                                                disabled={isReadOnly}
+                                                className="input"
+                                                placeholder="03xx-xxxxxxx"
+                                                value={formData.phone || ''}
+                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="label">Postal Address</label>
+                                            <textarea
+                                                disabled={isReadOnly}
+                                                className="input min-h-[80px]"
+                                                placeholder="Complete details accordingly"
+                                                value={formData.address || ''}
+                                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            />
+                                        </div>
                                     </>
                                 )}
 
@@ -355,17 +376,32 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="field-group">
-                                            <label className="label">Distributor Name</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                disabled={isReadOnly}
-                                                className="input"
-                                                placeholder="M&P"
-                                                value={formData.name || ''}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Distributor Name</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="M&P"
+                                                    value={formData.name || ''}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Distributor Type</label>
+                                                <select
+                                                    required
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.type || 'PREMIER'}
+                                                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                >
+                                                    <option value="PREMIER">Premier</option>
+                                                    <option value="SERVICE_PROVIDER">Service Provider</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </>
                                 )}
