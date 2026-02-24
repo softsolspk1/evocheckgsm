@@ -43,8 +43,8 @@ export default function OrdersPage() {
     const displayOrders = orders.map((o: any) => ({
         ...o,
         displayId: o.id.slice(-8).toUpperCase(),
-        patientName: o.patient.name,
-        cityName: o.city.name,
+        patientName: o.patient?.name || 'Unknown',
+        cityName: o.city?.name || 'Unknown',
         kamName: o.kam?.name || 'Unassigned',
         orderTo: o.orderTo,
         date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),

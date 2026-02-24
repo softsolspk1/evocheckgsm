@@ -115,13 +115,13 @@ const Dashboard = async () => {
                                 {recentOrders.map((order: any) => (
                                     <tr key={order.id} className="group transition-colors hover:bg-slate-50/50">
                                         <td className="py-4">
-                                            <div className="font-bold text-slate-800">{order.patient.name}</div>
+                                            <div className="font-bold text-slate-800">{order.patient?.name || 'Unknown Patient'}</div>
                                             <div className="text-xs text-slate-400 font-medium tracking-tight">ID: #{order.id.slice(-6).toUpperCase()}</div>
                                         </td>
                                         <td className="py-4">
                                             <div className="text-sm font-semibold text-slate-600 flex items-center gap-1">
                                                 <MapPin size={14} className="text-slate-400" />
-                                                {order.city.name}
+                                                {order.city?.name || 'Unknown City'}
                                             </div>
                                         </td>
                                         <td className="py-4">
