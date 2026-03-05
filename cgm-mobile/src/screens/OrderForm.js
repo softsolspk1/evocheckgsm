@@ -15,6 +15,7 @@ const OrderForm = ({ navigation, user }) => {
     const [distributors, setDistributors] = useState([]);
 
     const [formData, setFormData] = useState({
+        orderType: 'REGULAR',
         patientName: '',
         patientPhone: '',
         patientEmail: '',
@@ -27,6 +28,7 @@ const OrderForm = ({ navigation, user }) => {
         doctorCity: '',
         clinicHospital: '',
         product: '',
+        serialNumber: '',
         startingMonth: '',
         quantity: '',
         prescription: '',
@@ -57,8 +59,13 @@ const OrderForm = ({ navigation, user }) => {
 
     const handleSubmit = async () => {
         // Validation
-        if (!formData.patientName || !formData.patientPhone || !formData.cityId || !formData.orderTo) {
-            Alert.alert('Fields Required', 'Patient Name, Phone, City and Order To are mandatory.');
+        if (!formData.patientName || !formData.patientPhone || !formData.cityId || !formData.orderTo || !formData.serialNumber || !formData.product) {
+            Alert.alert('Fields Required', 'Required: Name, Phone, City, Order To, Product and Serial Number.');
+            return;
+        }
+
+        if (formData.serialNumber.length !== 10) {
+            Alert.alert('Invalid Serial', 'Serial Number must be exactly 10 characters.');
             return;
         }
 
@@ -142,39 +149,65 @@ const OrderForm = ({ navigation, user }) => {
             >
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
+                        <Text style={styles.subtitle}>ORDER CONFIGURATION</Text>
+                    </View>
+
+                    <View style={styles.section}>
+                        {renderSelect('ORDER TYPE *', 'orderType', [
+                            { id: 'REGULAR', name: 'Regular Order' },
+                            { id: 'FOC', name: 'FOC' }
+                        ], 'Select Type')}
+                    </View>
+
+                    <View style={styles.header}>
                         <Text style={styles.subtitle}>PATIENT DETAILS</Text>
                     </View>
 
                     <View style={styles.section}>
-                        {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
                         {renderInput('PHONE NUMBER *', 'patientPhone', '03xx-xxxxxxx', Phone, 'phone-pad')}
-                        {renderInput('AGE', 'age', 'Age', User, 'numeric')}
-                        {renderSelect('GENDER', 'gender', [{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }], 'Gender')}
-                        {renderInput('EMAIL ADDRESS', 'patientEmail', 'example@mail.com', User, 'email-address')}
+                        {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <View style={{ flex: 1 }}>{renderInput('AGE', 'age', 'Age', User, 'numeric')}</View>
+                            <View style={{ flex: 1 }}>{renderSelect('GENDER', 'gender', [{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }], 'Gender')}</View>
+                        </View>
+                        {renderSelect('SELECT CITY *', 'cityId', cities, 'City')}
                         {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
                     </View>
 
                     <View style={styles.header}>
-                        <Text style={styles.subtitle}>LOCATION & ASSIGNMENT</Text>
-                    </View>
-
-                    <View style={styles.section}>
-                        {renderSelect('SELECT CITY *', 'cityId', cities, 'City')}
-                        {renderSelect('SELECT DISTRIBUTOR', 'distributorId', distributors, 'Distributor')}
-                    </View>
-
-                    <View style={styles.header}>
-                        <Text style={styles.subtitle}>CLINICAL INFO</Text>
+                        <Text style={styles.subtitle}>PROFESSIONAL INFO</Text>
                     </View>
 
                     <View style={styles.section}>
                         {renderInput('DOCTOR NAME', 'doctorName', 'Dr. Name', Search)}
-                        {renderInput('DOCTOR CITY', 'doctorCity', 'City', MapPin)}
                         {renderInput('CLINIC / HOSPITAL', 'clinicHospital', 'Clinic/Hospital Name', MapPin)}
-                        {renderInput('PRODUCT / DOSAGE', 'product', 'Product details', Search)}
-                        {renderSelect('STARTING MONTH', 'startingMonth', Array.from({ length: 12 }, (_, i) => ({ id: new Date(0, i).toLocaleString('en', { month: 'long' }), name: new Date(0, i).toLocaleString('en', { month: 'long' }) })), 'Select Month')}
-                        {renderInput('QUANTITY', 'quantity', 'Qty', Search, 'numeric')}
-                        {renderInput('PRESCRIPTION LINK', 'prescription', 'Link or filename', Search)}
+                        {renderInput('DOCTOR CITY', 'doctorCity', 'City', MapPin)}
+                        {renderSelect('PRODUCT *', 'product', [
+                            { id: 'EVOCHECK PREMIUM LINX CGM 1S - Rs.12900', name: 'EVOCHECK PREMIUM LINX CGM 1S' }
+                        ], 'Select Product')}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: theme.colors.secondary }]}>SERIAL NUMBER (10 CHARS) *</Text>
+                            <View style={[styles.inputWrapper, { borderColor: theme.colors.secondary, borderWidth: 2 }]}>
+                                <Search size={18} color={theme.colors.secondary} style={styles.icon} />
+                                <TextInput
+                                    style={[styles.input, { fontWeight: '900', letterSpacing: 2 }]}
+                                    placeholder="SNXXXXXXXX"
+                                    maxLength={10}
+                                    autoCapitalize="characters"
+                                    value={formData.serialNumber}
+                                    onChangeText={(text) => setFormData({ ...formData, serialNumber: text.toUpperCase() })}
+                                />
+                            </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <View style={{ flex: 1 }}>
+                                {renderSelect('STARTING MONTH', 'startingMonth', Array.from({ length: 12 }, (_, i) => ({ id: new Date(0, i).toLocaleString('en', { month: 'long' }), name: new Date(0, i).toLocaleString('en', { month: 'long' }) })), 'Select Month')}
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                {renderSelect('QTY', 'quantity', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => ({ id: q.toString(), name: q.toString() })), 'Qty')}
+                            </View>
+                        </View>
+                        {renderInput('PRESCRIPTION (UPLOAD)', 'prescription', 'Link or filename', Search)}
                     </View>
 
                     <View style={styles.header}>
@@ -211,6 +244,7 @@ const OrderForm = ({ navigation, user }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
+                        {renderSelect('SELECT DISTRIBUTOR', 'distributorId', distributors.filter(d => d.role === (formData.orderTo === 'PREMIER' ? 'DISTRIBUTOR' : 'SERVICE_PROVIDER')), 'Distributor')}
                     </View>
 
                     <TouchableOpacity

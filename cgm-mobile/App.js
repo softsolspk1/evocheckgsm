@@ -20,6 +20,8 @@ import KAMDashboard from './src/screens/KAM/Dashboard';
 import SubmissionForm from './src/screens/KAM/SubmissionForm';
 import KAMOrders from './src/screens/KAM/Orders';
 import DeviceTracking from './src/screens/KAM/DeviceTracking';
+import DoctorVisitForm from './src/screens/KAM/DoctorVisitForm';
+import ReplacementRequestForm from './src/screens/KAM/ReplacementRequestForm';
 import DistributorDashboard from './src/screens/Distributor/Dashboard';
 import DistributorOrders from './src/screens/Distributor/Orders';
 import DistributorInventory from './src/screens/Distributor/Inventory';
@@ -286,8 +288,11 @@ const InstallerTabs = ({ onSignOut, user, navigation }) => (
     screenOptions={({ route }) => ({
       tabBarIcon: ({ focused, color, size }) => {
         let Icon;
-        if (route.name === 'Dashboard') Icon = Activity;
-        else if (route.name === 'SubmissionForm') Icon = CheckSquare;
+        if (route.name === 'Dashboard') Icon = LayoutDashboard;
+        else if (route.name === 'Orders') Icon = ShoppingCart;
+        else if (route.name === 'Tracking') Icon = ClipboardList;
+        else if (route.name === 'Installation') Icon = PlusSquare;
+
         return <Icon size={size} color={color} />;
       },
       tabBarActiveTintColor: theme.colors.primary,
@@ -351,12 +356,15 @@ const InstallerTabs = ({ onSignOut, user, navigation }) => (
     })}
   >
     <Tab.Screen name="Dashboard">
-      {(props) => <InstallerDashboard {...props} user={user} />}
+      {(props) => <KAMDashboard {...props} user={user} />}
     </Tab.Screen>
-    <Tab.Screen name="Orders" options={{ title: 'Pending Installs' }}>
-      {(props) => <InstallerOrders {...props} user={user} />}
+    <Tab.Screen name="Orders">
+      {(props) => <KAMOrders {...props} user={user} />}
     </Tab.Screen>
-    <Tab.Screen name="SubmissionForm" options={{ title: 'Report Installation' }}>
+    <Tab.Screen name="Tracking">
+      {(props) => <DeviceTracking {...props} user={user} />}
+    </Tab.Screen>
+    <Tab.Screen name="Installation" options={{ title: 'Report Installation' }}>
       {(props) => <SubmissionForm {...props} user={user} />}
     </Tab.Screen>
   </Tab.Navigator>
@@ -444,6 +452,24 @@ export default function App() {
               }}
             >
               {(props) => <OrderForm {...props} user={user} />}
+            </Stack.Screen>
+
+            <Stack.Screen
+              name="DoctorVisitForm"
+              options={{
+                headerShown: false,
+              }}
+            >
+              {(props) => <DoctorVisitForm {...props} user={user} />}
+            </Stack.Screen>
+
+            <Stack.Screen
+              name="ReplacementRequestForm"
+              options={{
+                headerShown: false,
+              }}
+            >
+              {(props) => <ReplacementRequestForm {...props} user={user} />}
             </Stack.Screen>
           </>
         )}

@@ -105,5 +105,31 @@ export const apiService = {
         });
         if (!response.ok) throw new Error('Failed to update inventory');
         return response.json();
+    },
+
+    async createReplacementRequest(data) {
+        const response = await fetch(`${BASE_URL}/replacements`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to submit replacement request');
+        }
+        return response.json();
+    },
+
+    async recordDoctorVisit(data) {
+        const response = await fetch(`${BASE_URL}/doctor-visits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to record doctor visit');
+        }
+        return response.json();
     }
 };

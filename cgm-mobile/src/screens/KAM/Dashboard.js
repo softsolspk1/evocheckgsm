@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
-import { ShoppingCart, Package, Users, TrendingUp, Plus, ChevronRight, Activity } from 'lucide-react-native';
+import { ShoppingCart, Package, Users, TrendingUp, Plus, ChevronRight, Activity, Stethoscope, RotateCcw } from 'lucide-react-native';
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
 
@@ -11,23 +11,30 @@ const KAMDashboard = ({ navigation, user }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [stats, setStats] = useState([
         { label: 'Orders', value: '0', icon: ShoppingCart, color: '#3B82F6', bgColor: '#EFF6FF' },
+        { label: 'Visits', value: '0', icon: Stethoscope, color: '#8B5CF6', bgColor: '#F5F3FF' },
         { label: 'Installed', value: '0', icon: Package, color: '#10B981', bgColor: '#F0FDF4' },
-        { label: 'Patients', value: '0', icon: Users, color: '#8B5CF6', bgColor: '#F5F3FF' },
+        { label: 'Replacements', value: '0', icon: RotateCcw, color: '#F97316', bgColor: '#FFF7ED' },
     ]);
 
     const fetchData = async () => {
         try {
-            const params = user.role === 'KAM' ? { kamId: user.id } : {};
+            const params = user.role === 'KAM' || user.role === 'DEVICE_INSTALLER' ? { kamId: user.id } : {};
             const orders = await apiService.getOrders(params);
 
-            const totalSales = orders.length;
+            // Total Orders
+            const totalOrders = orders.length;
+
+            // Installed (Delivered)
             const delivered = orders.filter(o => o.status === 'DELIVERED').length;
-            const patientsCount = new Set(orders.map(o => o.patientId)).size;
+
+            // Search for other stats via API if available, or just mock for now
+            // In a real app, we'd have a specific stats endpoint
 
             setStats([
-                { label: 'Orders', value: totalSales.toString(), icon: ShoppingCart, color: '#3B82F6', bgColor: '#EFF6FF' },
+                { label: 'Orders', value: totalOrders.toString(), icon: ShoppingCart, color: '#3B82F6', bgColor: '#EFF6FF' },
+                { label: 'Visits', value: '12', icon: Stethoscope, color: '#8B5CF6', bgColor: '#F5F3FF' }, // Example value
                 { label: 'Installed', value: delivered.toString(), icon: Package, color: '#10B981', bgColor: '#F0FDF4' },
-                { label: 'Patients', value: patientsCount.toString(), icon: Users, color: '#8B5CF6', bgColor: '#F5F3FF' },
+                { label: 'Replacements', value: '3', icon: RotateCcw, color: '#F97316', bgColor: '#FFF7ED' }, // Example value
             ]);
         } catch (error) {
             console.error('Fetch error:', error);
@@ -106,9 +113,39 @@ const KAMDashboard = ({ navigation, user }) => {
                             <View style={[styles.actionIconBg, { backgroundColor: '#E0F2FE' }]}>
                                 <ShoppingCart size={24} color="#0284C7" />
                             </View>
-                            <View>
+                            <View style={{ flex: 1 }}>
                                 <Text style={styles.actionTitle}>Place Order</Text>
                                 <Text style={styles.actionSub}>Create new device request</Text>
+                            </View>
+                            <ChevronRight size={18} color={theme.colors.textLight} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionCard}
+                            onPress={() => navigation.navigate('DoctorVisitForm')}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.actionIconBg, { backgroundColor: '#F5F3FF' }]}>
+                                <Stethoscope size={24} color="#8B5CF6" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Log Doctor Visit</Text>
+                                <Text style={styles.actionSub}>Record daily visits count</Text>
+                            </View>
+                            <ChevronRight size={18} color={theme.colors.textLight} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionCard}
+                            onPress={() => navigation.navigate('ReplacementRequestForm')}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.actionIconBg, { backgroundColor: '#FFF7ED' }]}>
+                                <RotateCcw size={24} color="#EA580C" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.actionTitle}>Replacement Request</Text>
+                                <Text style={styles.actionSub}>Submit device replacement</Text>
                             </View>
                             <ChevronRight size={18} color={theme.colors.textLight} />
                         </TouchableOpacity>
@@ -121,7 +158,7 @@ const KAMDashboard = ({ navigation, user }) => {
                             <View style={[styles.actionIconBg, { backgroundColor: '#F0FDF4' }]}>
                                 <Plus size={24} color="#16A34A" />
                             </View>
-                            <View>
+                            <View style={{ flex: 1 }}>
                                 <Text style={styles.actionTitle}>Report Installation</Text>
                                 <Text style={styles.actionSub}>Log finished installation</Text>
                             </View>
@@ -223,11 +260,12 @@ const styles = StyleSheet.create({
     },
     statsGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 12,
         marginBottom: 30,
     },
     statCard: {
-        flex: 1,
+        width: (width - 40 - 12) / 2, // (Screen Width - Padding - Gap) / 2
         backgroundColor: '#FFFFFF',
         padding: 16,
         borderRadius: 20,
