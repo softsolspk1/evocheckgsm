@@ -19,10 +19,16 @@ const OrderForm = ({ navigation, user }) => {
         patientPhone: '',
         patientEmail: '',
         patientAddress: '',
+        age: '',
+        gender: '',
         cityId: '',
         distributorId: '',
         doctorName: '',
         doctorCity: '',
+        clinicHospital: '',
+        product: '',
+        startingMonth: '',
+        quantity: '',
         prescription: '',
         orderTo: 'PREMIER',
         source: 'MOBILE',
@@ -142,6 +148,8 @@ const OrderForm = ({ navigation, user }) => {
                     <View style={styles.section}>
                         {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
                         {renderInput('PHONE NUMBER *', 'patientPhone', '03xx-xxxxxxx', Phone, 'phone-pad')}
+                        {renderInput('AGE', 'age', 'Age', User, 'numeric')}
+                        {renderSelect('GENDER', 'gender', [{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }], 'Gender')}
                         {renderInput('EMAIL ADDRESS', 'patientEmail', 'example@mail.com', User, 'email-address')}
                         {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
                     </View>
@@ -162,6 +170,10 @@ const OrderForm = ({ navigation, user }) => {
                     <View style={styles.section}>
                         {renderInput('DOCTOR NAME', 'doctorName', 'Dr. Name', Search)}
                         {renderInput('DOCTOR CITY', 'doctorCity', 'City', MapPin)}
+                        {renderInput('CLINIC / HOSPITAL', 'clinicHospital', 'Clinic/Hospital Name', MapPin)}
+                        {renderInput('PRODUCT / DOSAGE', 'product', 'Product details', Search)}
+                        {renderSelect('STARTING MONTH', 'startingMonth', Array.from({ length: 12 }, (_, i) => ({ id: new Date(0, i).toLocaleString('en', { month: 'long' }), name: new Date(0, i).toLocaleString('en', { month: 'long' }) })), 'Select Month')}
+                        {renderInput('QUANTITY', 'quantity', 'Qty', Search, 'numeric')}
                         {renderInput('PRESCRIPTION LINK', 'prescription', 'Link or filename', Search)}
                     </View>
 

@@ -445,6 +445,32 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                 />
                                             </div>
                                         </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Age</label>
+                                                <input
+                                                    type="number"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Age"
+                                                    value={formData.age || ''}
+                                                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Gender</label>
+                                                <select
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.gender || ''}
+                                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                                >
+                                                    <option value="">Select Gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div className="field-group">
                                             <label className="label">City</label>
                                             <select
@@ -572,6 +598,57 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({
                                                     placeholder="Prescription Link/Name"
                                                     value={formData.prescription || ''}
                                                     onChange={(e) => setFormData({ ...formData, prescription: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Clinic/Hospital</label>
+                                                <input
+                                                    type="text"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Clinic/Hospital Name"
+                                                    value={formData.clinicHospital || ''}
+                                                    onChange={(e) => setFormData({ ...formData, clinicHospital: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Product / Dosage</label>
+                                                <input
+                                                    type="text"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Product Dosage"
+                                                    value={formData.product || ''}
+                                                    onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="field-group">
+                                                <label className="label">Starting Month</label>
+                                                <select
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    value={formData.startingMonth || ''}
+                                                    onChange={(e) => setFormData({ ...formData, startingMonth: e.target.value })}
+                                                >
+                                                    <option value="">Select Month</option>
+                                                    {Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString('en', { month: 'long' })).map(m => (
+                                                        <option key={m} value={m}>{m}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="label">Quantity</label>
+                                                <input
+                                                    type="number"
+                                                    disabled={isReadOnly}
+                                                    className="input"
+                                                    placeholder="Qty"
+                                                    value={formData.quantity || ''}
+                                                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                                                 />
                                             </div>
                                         </div>

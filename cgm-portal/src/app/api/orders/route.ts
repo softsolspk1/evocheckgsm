@@ -35,8 +35,10 @@ export async function POST(req: Request) {
         const body = await req.json();
         const {
             patientId, patientName, patientPhone, patientEmail, patientAddress,
+            age, gender,
             cityId, kamId, distributorId, doctorName,
-            orderTo, doctorCity, prescription, source
+            orderTo, doctorCity, clinicHospital, product, startingMonth, quantity,
+            prescription, source
         } = body;
 
         // Find or create patient
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
                         name: patientName,
                         phone: patientPhone,
                         email: patientEmail,
+                        age: age ? parseInt(age.toString()) : null,
+                        gender: gender || null,
                         address: patientAddress,
                         cityId: cityId
                     }
@@ -87,6 +91,10 @@ export async function POST(req: Request) {
                 doctorName: doctorName,
                 orderTo: orderTo || 'PREMIER',
                 doctorCity: doctorCity,
+                clinicHospital: clinicHospital,
+                product: product,
+                startingMonth: startingMonth,
+                quantity: quantity ? parseInt(quantity.toString()) : null,
                 prescription: prescription,
                 source: source || 'CSR',
                 status: 'PENDING',
@@ -151,6 +159,10 @@ export async function PUT(req: Request) {
                 distributorId: body.distributorId,
                 orderTo: body.orderTo,
                 doctorCity: body.doctorCity,
+                clinicHospital: body.clinicHospital,
+                product: body.product,
+                startingMonth: body.startingMonth,
+                quantity: body.quantity ? parseInt(body.quantity.toString()) : undefined,
                 prescription: body.prescription
             }
         });

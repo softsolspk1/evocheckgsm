@@ -83,6 +83,8 @@ model Patient {
   name      String
   phone     String                   @unique
   email     String?
+  age       Int?
+  gender    String?
   address   String?
   cityId    String?
   areaId    String?
@@ -104,10 +106,14 @@ model Order {
   status        OrderStatus             @default(PENDING)
   doctorName    String?
   orderTo       OrderTo                 @default(PREMIER)
-  doctorCity    String?
-  prescription  String?
-  source        String?                 @default("CSR")
-  createdAt     DateTime                @default(now())
+  doctorCity     String?
+  clinicHospital String?
+  product        String?
+  startingMonth  String?
+  quantity       Int?
+  prescription   String?
+  source         String?                 @default("CSR")
+  createdAt      DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
   areaId        String?
   area          Area?                   @relation(fields: [areaId], references: [id])
@@ -166,6 +172,8 @@ enum Role {
   SUB_ADMIN
   KAM
   DISTRIBUTOR
+  SERVICE_PROVIDER
+  DEVICE_INSTALLER
 }
 
 enum OrderStatus {

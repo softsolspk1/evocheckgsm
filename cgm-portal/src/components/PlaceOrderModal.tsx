@@ -18,12 +18,18 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
         patientPhone: '',
         patientEmail: '',
         patientAddress: '',
+        age: '',
+        gender: '',
         cityId: '',
         kamId: '',
         distributorId: '',
         doctorName: '',
         orderTo: 'PREMIER',
         doctorCity: '',
+        clinicHospital: '',
+        product: '',
+        startingMonth: '',
+        quantity: '',
         prescription: '',
         source: 'CSR'
     });
@@ -128,6 +134,30 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                                 />
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="field-group">
+                                    <label className="label">Age</label>
+                                    <input
+                                        type="number"
+                                        className="input"
+                                        placeholder="Age"
+                                        value={formData.age}
+                                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                    />
+                                </div>
+                                <div className="field-group">
+                                    <label className="label">Gender</label>
+                                    <select
+                                        className="input"
+                                        value={formData.gender}
+                                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                    >
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div className="field-group">
                                 <label className="label">Patient Email</label>
                                 <input
@@ -184,6 +214,51 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                                     value={formData.doctorCity}
                                     onChange={(e) => setFormData({ ...formData, doctorCity: e.target.value })}
                                 />
+                            </div>
+                            <div className="field-group">
+                                <label className="label">Clinic/Hospital</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Clinic/Hospital Name"
+                                    value={formData.clinicHospital}
+                                    onChange={(e) => setFormData({ ...formData, clinicHospital: e.target.value })}
+                                />
+                            </div>
+                            <div className="field-group">
+                                <label className="label">Product / Dosage</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Product Dosage"
+                                    value={formData.product}
+                                    onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="field-group">
+                                    <label className="label">Starting Month</label>
+                                    <select
+                                        className="input"
+                                        value={formData.startingMonth}
+                                        onChange={(e) => setFormData({ ...formData, startingMonth: e.target.value })}
+                                    >
+                                        <option value="">Select Month</option>
+                                        {Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString('en', { month: 'long' })).map(m => (
+                                            <option key={m} value={m}>{m}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="field-group">
+                                    <label className="label">Quantity</label>
+                                    <input
+                                        type="number"
+                                        className="input"
+                                        placeholder="Qty"
+                                        value={formData.quantity}
+                                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                    />
+                                </div>
                             </div>
                             <div className="field-group">
                                 <label className="label">Prescription (FileName/Link)</label>
