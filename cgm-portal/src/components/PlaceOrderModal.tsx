@@ -14,6 +14,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
     const [kams, setKams] = useState<any[]>([]);
     const [distributors, setDistributors] = useState<any[]>([]);
     const [formData, setFormData] = useState<any>({
+        orderType: 'REGULAR',
         patientName: '',
         patientPhone: '',
         patientEmail: '',
@@ -28,6 +29,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
         doctorCity: '',
         clinicHospital: '',
         product: '',
+        serialNumber: '',
         startingMonth: '',
         quantity: '',
         prescription: '',
@@ -109,166 +111,195 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Patient Information</h4>
-                            <div className="field-group">
-                                <label className="label">Full Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="input"
-                                    placeholder="Patient Name"
-                                    value={formData.patientName}
-                                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                                />
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Phone Number</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="input"
-                                    placeholder="03xx-xxxxxxx"
-                                    value={formData.patientPhone}
-                                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-6">
+                        <div className="field-group">
+                            <label className="label">Order Type</label>
+                            <select
+                                required
+                                className="input font-bold text-blue-600 bg-blue-50/30"
+                                value={formData.orderType}
+                                onChange={(e) => setFormData({ ...formData, orderType: e.target.value })}
+                            >
+                                <option value="REGULAR">Regular Order</option>
+                                <option value="FOC">FOC</option>
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8">
+                            {/* Left Column: Patient Details */}
+                            <div className="space-y-4">
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Patient Information</h4>
                                 <div className="field-group">
-                                    <label className="label">Age</label>
+                                    <label className="label">Patient Mobile*</label>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        required
                                         className="input"
-                                        placeholder="Age"
-                                        value={formData.age}
-                                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                        placeholder="03xx-xxxxxxx"
+                                        value={formData.patientPhone}
+                                        onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                                     />
                                 </div>
                                 <div className="field-group">
-                                    <label className="label">Gender</label>
-                                    <select
+                                    <label className="label">Patient Name*</label>
+                                    <input
+                                        type="text"
+                                        required
                                         className="input"
-                                        value={formData.gender}
-                                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                    >
-                                        <option value="">Select Gender</option>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                    </select>
+                                        placeholder="Full Name"
+                                        value={formData.patientName}
+                                        onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                                    />
                                 </div>
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Patient Email</label>
-                                <input
-                                    type="email"
-                                    className="input"
-                                    placeholder="patient@email.com"
-                                    value={formData.patientEmail}
-                                    onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
-                                />
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Physical Address</label>
-                                <textarea
-                                    className="input min-h-[80px]"
-                                    placeholder="Full Address"
-                                    value={formData.patientAddress}
-                                    onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Order Logistics</h4>
-                            <div className="field-group">
-                                <label className="label">City</label>
-                                <select
-                                    required
-                                    className="input"
-                                    value={formData.cityId}
-                                    onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
-                                >
-                                    <option value="">Select City</option>
-                                    {cities.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Doctor Name</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    placeholder="Doctor Name"
-                                    value={formData.doctorName}
-                                    onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
-                                />
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Doctor City</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    placeholder="City for Doctor"
-                                    value={formData.doctorCity}
-                                    onChange={(e) => setFormData({ ...formData, doctorCity: e.target.value })}
-                                />
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Clinic/Hospital</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    placeholder="Clinic/Hospital Name"
-                                    value={formData.clinicHospital}
-                                    onChange={(e) => setFormData({ ...formData, clinicHospital: e.target.value })}
-                                />
-                            </div>
-                            <div className="field-group">
-                                <label className="label">Product / Dosage</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    placeholder="Product Dosage"
-                                    value={formData.product}
-                                    onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="field-group">
+                                        <label className="label">Age*</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            className="input"
+                                            placeholder="Age"
+                                            value={formData.age}
+                                            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="field-group">
+                                        <label className="label">Gender*</label>
+                                        <select
+                                            required
+                                            className="input"
+                                            value={formData.gender}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div className="field-group">
-                                    <label className="label">Starting Month</label>
+                                    <label className="label">City*</label>
                                     <select
+                                        required
                                         className="input"
-                                        value={formData.startingMonth}
-                                        onChange={(e) => setFormData({ ...formData, startingMonth: e.target.value })}
+                                        value={formData.cityId}
+                                        onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
                                     >
-                                        <option value="">Select Month</option>
-                                        {Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString('en', { month: 'long' })).map(m => (
-                                            <option key={m} value={m}>{m}</option>
+                                        <option value="">Select City</option>
+                                        {cities.map((c) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
                                 </div>
                                 <div className="field-group">
-                                    <label className="label">Quantity</label>
-                                    <input
-                                        type="number"
-                                        className="input"
-                                        placeholder="Qty"
-                                        value={formData.quantity}
-                                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                    <label className="label">Address*</label>
+                                    <textarea
+                                        required
+                                        className="input min-h-[80px]"
+                                        placeholder="Full Address"
+                                        value={formData.patientAddress}
+                                        onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
                                     />
                                 </div>
                             </div>
-                            <div className="field-group">
-                                <label className="label">Prescription (FileName/Link)</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    placeholder="Link or Name"
-                                    value={formData.prescription}
-                                    onChange={(e) => setFormData({ ...formData, prescription: e.target.value })}
-                                />
+
+                            {/* Right Column: Order Details */}
+                            <div className="space-y-4">
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Professional Details</h4>
+                                <div className="field-group">
+                                    <label className="label">Doctor Name</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="Dr. Name"
+                                        value={formData.doctorName}
+                                        onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
+                                    />
+                                </div>
+                                <div className="field-group">
+                                    <label className="label">Clinic / Hospital</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="Hospital Name"
+                                        value={formData.clinicHospital}
+                                        onChange={(e) => setFormData({ ...formData, clinicHospital: e.target.value })}
+                                    />
+                                </div>
+                                <div className="field-group">
+                                    <label className="label">Doctor City</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="City"
+                                        value={formData.doctorCity}
+                                        onChange={(e) => setFormData({ ...formData, doctorCity: e.target.value })}
+                                    />
+                                </div>
+                                <div className="field-group">
+                                    <label className="label">Product*</label>
+                                    <select
+                                        required
+                                        className="input"
+                                        value={formData.product}
+                                        onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                                    >
+                                        <option value="">-- Select Dosage --</option>
+                                        <option value="EVOCHECK PREMIUM LINX CGM 1S - Rs.12900">EVOCHECK PREMIUM LINX CGM 1S - Rs.12900</option>
+                                    </select>
+                                </div>
+                                <div className="field-group">
+                                    <label className="label font-black text-slate-800">Serial Number (10 Chars)*</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        maxLength={10}
+                                        className="input border-2 border-slate-200 uppercase font-black tracking-widest focus:border-blue-500"
+                                        placeholder="SNXXXXXXXX"
+                                        value={formData.serialNumber}
+                                        onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value.toUpperCase() })}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="field-group">
+                                        <label className="label">Starting Month*</label>
+                                        <select
+                                            required
+                                            className="input"
+                                            value={formData.startingMonth}
+                                            onChange={(e) => setFormData({ ...formData, startingMonth: e.target.value })}
+                                        >
+                                            <option value="">Select Month</option>
+                                            {Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString('en', { month: 'long' })).map(m => (
+                                                <option key={m} value={m}>{m}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="field-group">
+                                        <label className="label">Quantity*</label>
+                                        <select
+                                            required
+                                            className="input"
+                                            value={formData.quantity}
+                                            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                        >
+                                            <option value="">Qty</option>
+                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => (
+                                                <option key={q} value={q}>{q}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="field-group">
+                                    <label className="label">Prescription (Upload)*</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="FileName / Link"
+                                        value={formData.prescription}
+                                        onChange={(e) => setFormData({ ...formData, prescription: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

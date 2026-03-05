@@ -20,18 +20,21 @@ const Dashboard = async () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [todayOrders, monthlyOrders, kamCount, distributorCount] = await Promise.all([
+    const [todayOrders, todayVisits, todayInstallations, todayRefunds] = await Promise.all([
         prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
-        prisma.order.count({ where: { createdAt: { gte: new Date(today.getFullYear(), today.getMonth(), 1) } } }),
-        prisma.user.count({ where: { role: 'KAM' } }),
-        prisma.distributor.count(),
+        prisma.doctorVisit.aggregate({
+            where: { visitDate: { gte: todayStart } },
+            _sum: { visitCount: true }
+        }).then(res => res._sum.visitCount || 0),
+        prisma.postAdministrationForm.count({ where: { createdAt: { gte: todayStart } } }),
+        prisma.refundRequest.count({ where: { createdAt: { gte: todayStart } } }),
     ]);
 
     const stats = [
         { label: "Today's Orders", value: todayOrders.toString(), change: "+12%", trend: 'up', icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { label: "Monthly Growth", value: monthlyOrders.toString(), change: "+8%", trend: 'up', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-        { label: "Active KAMs", value: kamCount.toString(), change: "Stable", trend: 'up', icon: UserPlus, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-        { label: "Network Distributors", value: distributorCount.toString(), change: "-2%", trend: 'down', icon: Truck, color: 'text-orange-500', bg: 'bg-orange-50' },
+        { label: "Today's Doctor Visits", value: todayVisits.toString(), change: "+8%", trend: 'up', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+        { label: "Today's Installation", value: todayInstallations.toString(), change: "Stable", trend: 'up', icon: UserPlus, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+        { label: "Today's Refund Request", value: todayRefunds.toString(), change: "-2%", trend: 'down', icon: Truck, color: 'text-orange-500', bg: 'bg-orange-50' },
     ];
 
     const recentOrders = await prisma.order.findMany({
@@ -40,13 +43,23 @@ const Dashboard = async () => {
         include: { patient: true, city: true, kam: true }
     });
 
-    const kamData = [
-        { name: 'Peshawar', score: 85 },
-        { name: 'Karachi', score: 72 },
-        { name: 'Lahore', score: 64 },
-        { name: 'Islamabad', score: 58 },
-        { name: 'Quetta', score: 45 },
-    ];
+    const doctorVisitsByKam = await prisma.doctorVisit.groupBy({
+        by: ['kamId'],
+        _sum: { visitCount: true },
+        orderBy: { _sum: { visitCount: 'desc' } },
+        take: 5
+    });
+
+    const kamIds = doctorVisitsByKam.map(v => v.kamId);
+    const kams = await prisma.user.findMany({
+        where: { id: { in: kamIds } },
+        select: { id: true, name: true }
+    });
+
+    const kamData = doctorVisitsByKam.map(v => ({
+        name: kams.find(k => k.id === v.kamId)?.name || 'Unknown',
+        score: v._sum.visitCount || 0
+    }));
 
     return (
         <div className="space-y-10">

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
             patientId, patientName, patientPhone, patientEmail, patientAddress,
             age, gender,
             cityId, kamId, distributorId, doctorName,
-            orderTo, doctorCity, clinicHospital, product, startingMonth, quantity,
+            orderType, orderTo, doctorCity, clinicHospital, product, startingMonth, quantity,
             prescription, source
         } = body;
 
@@ -89,6 +89,7 @@ export async function POST(req: Request) {
                 kamId: kamId,
                 distributorId: distributorId,
                 doctorName: doctorName,
+                orderType: orderType || 'REGULAR',
                 orderTo: orderTo || 'PREMIER',
                 doctorCity: doctorCity,
                 clinicHospital: clinicHospital,
@@ -161,6 +162,7 @@ export async function PUT(req: Request) {
                 doctorCity: body.doctorCity,
                 clinicHospital: body.clinicHospital,
                 product: body.product,
+                orderType: body.orderType,
                 startingMonth: body.startingMonth,
                 quantity: body.quantity ? parseInt(body.quantity.toString()) : undefined,
                 prescription: body.prescription

@@ -16,6 +16,7 @@ export default function OrdersPage() {
     const [modalMode, setModalMode] = useState<'VIEW' | 'EDIT' | 'DELETE'>('VIEW');
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState<'ALL' | 'TODAY' | '7DAYS' | 'MONTH'>('ALL');
+    const [activeTab, setActiveTab] = useState<'REGULAR' | 'FOC'>('REGULAR');
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -58,6 +59,11 @@ export default function OrdersPage() {
             o.status.toLowerCase().includes(searchTerm.toLowerCase());
 
         if (!matchesSearch) return false;
+
+        if (!matchesSearch) return false;
+
+        // Order Type filter
+        if (o.orderType !== activeTab) return false;
 
         // Date filter
         if (dateFilter === 'ALL') return true;
@@ -186,6 +192,24 @@ export default function OrdersPage() {
                         <span>Place New Order</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Tabs section */}
+            <div className="flex border-b border-slate-200">
+                <button
+                    onClick={() => setActiveTab('REGULAR')}
+                    className={`px-8 py-4 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'REGULAR' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Regular Orders
+                    {activeTab === 'REGULAR' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-4px_10px_rgba(37,99,235,0.2)]" />}
+                </button>
+                <button
+                    onClick={() => setActiveTab('FOC')}
+                    className={`px-8 py-4 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'FOC' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    FOC Orders
+                    {activeTab === 'FOC' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-4px_10px_rgba(37,99,235,0.2)]" />}
+                </button>
             </div>
 
             <div className="card">

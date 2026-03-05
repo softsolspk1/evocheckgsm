@@ -27,6 +27,9 @@ model User {
   city          City?        @relation(fields: [cityId], references: [id])
   distributor   Distributor? @relation(fields: [distributorId], references: [id])
   notifications Notification[]
+  replacementRequests ReplacementRequest[]
+  doctorVisits       DoctorVisit[]
+  refundRequests     RefundRequest[]
 }
 
 model Notification {
@@ -94,6 +97,7 @@ model Patient {
   area      Area?                    @relation(fields: [areaId], references: [id])
   city      City?                    @relation(fields: [cityId], references: [id])
   postForms PostAdministrationForm[]
+  refundRequests RefundRequest[]
 }
 
 model Order {
@@ -104,6 +108,7 @@ model Order {
   cityId        String
   createdById   String
   status        OrderStatus             @default(PENDING)
+  orderType     OrderType               @default(REGULAR)
   doctorName    String?
   orderTo       OrderTo                 @default(PREMIER)
   doctorCity     String?
@@ -123,6 +128,42 @@ model Order {
   kam           User?                   @relation("KamOrders", fields: [kamId], references: [id])
   patient       Patient                 @relation(fields: [patientId], references: [id])
   postForm      PostAdministrationForm?
+}
+
+model ReplacementRequest {
+  id              String   @id @default(uuid())
+  kamId           String
+  distributorId   String?
+  cgmSerialNumber String
+  daysRemaining   Int
+  month           String
+  comments        String?
+  appPicture      String?
+  boxPicture      String?
+  status          RequestStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  kam             User     @relation(fields: [kamId], references: [id])
+}
+
+model RefundRequest {
+  id        String   @id @default(uuid())
+  kamId     String
+  patientId String
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  kam       User     @relation(fields: [kamId], references: [id])
+  patient   Patient  @relation(fields: [patientId], references: [id])
+}
+
+model DoctorVisit {
+  id         String   @id @default(uuid())
+  kamId      String
+  visitCount Int
+  visitDate  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  kam        User     @relation(fields: [kamId], references: [id])
 }
 
 model PostAdministrationForm {
@@ -186,7 +227,18 @@ enum OrderStatus {
   COMPLETED
 }
 
+enum OrderType {
+  REGULAR
+  FOC
+}
+
 enum OrderTo {
   PREMIER
   SERVICE_PROVIDER
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
