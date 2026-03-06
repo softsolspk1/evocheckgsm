@@ -18,7 +18,8 @@ import {
     UserSquare2,
     BarChart3,
     Users2,
-    LogOut
+    LogOut,
+    LocateFixed
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -28,6 +29,7 @@ const menuItems = [
     { name: "Replacement Requests", href: "/replacements", icon: RotateCcw, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Refund Requests", href: "/refunds", icon: RefreshCw, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Doctor Visits", href: "/doctor-visits", icon: Stethoscope, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
+    { name: "Device Tracking", href: "/device-tracking", icon: LocateFixed, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Patients", href: "/patients", icon: Users, roles: ["SUPER_ADMIN"] },
     { name: "City", href: "/city", icon: Globe, roles: ["SUPER_ADMIN"] },
     { name: "Area", href: "/area", icon: MapPin, roles: ["SUPER_ADMIN"] },

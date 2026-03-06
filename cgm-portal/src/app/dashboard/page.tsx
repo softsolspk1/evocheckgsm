@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import React from 'react';
 
 export const dynamic = 'force-dynamic';
 import {
@@ -37,29 +38,32 @@ const Dashboard = async () => {
         { label: "Today's Refund Request", value: todayRefunds.toString(), change: "-2%", trend: 'down', icon: Truck, color: 'text-orange-500', bg: 'bg-orange-50' },
     ];
 
-    const recentOrders = await prisma.order.findMany({
-        take: 5,
+    const installations = await prisma.postAdministrationForm.findMany({
+        take: 10,
+        orderBy: { visitDate: 'desc' },
+        include: { patient: true }
+    });
+
+    const recentOrdersAnalytics = await prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
-        include: { patient: true, city: true, kam: true }
+        where: {
+            createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } // Last 7 days
+        },
+        include: { kam: true }
     });
 
-    const doctorVisitsByKam = await prisma.doctorVisit.groupBy({
-        by: ['kamId'],
-        _sum: { visitCount: true },
-        orderBy: { _sum: { visitCount: 'desc' } },
-        take: 5
-    });
+    // Group analytics data by Date, then by KAM
+    const pivotData = recentOrdersAnalytics.reduce((acc: any, order) => {
+        const dateStr = new Date(order.createdAt).toLocaleDateString();
+        if (!acc[dateStr]) acc[dateStr] = {};
 
-    const kamIds = doctorVisitsByKam.map(v => v.kamId);
-    const kams = await prisma.user.findMany({
-        where: { id: { in: kamIds } },
-        select: { id: true, name: true }
-    });
+        const kamName = order.kam?.name || 'Unknown KAM';
+        if (!acc[dateStr][kamName]) acc[dateStr][kamName] = 0;
 
-    const kamData = doctorVisitsByKam.map(v => ({
-        name: kams.find(k => k.id === v.kamId)?.name || 'Unknown',
-        score: v._sum.visitCount || 0
-    }));
+        acc[dateStr][kamName]++;
+        return acc;
+    }, {});
+
 
     return (
         <div className="space-y-10">
@@ -100,80 +104,101 @@ const Dashboard = async () => {
                 })}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* Recent Orders Table */}
-                <div className="xl:col-span-2 card">
-                    <div className="flex items-center justify-between mb-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                {/* Analytics Table (Pivot) */}
+                <div className="card">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Recent Activity</h3>
-                            <p className="text-sm text-slate-500 font-medium">Latest orders processed across cities.</p>
+                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Analytics</h3>
+                            <p className="text-sm text-slate-500 font-medium">Order counts by Date and KAM.</p>
                         </div>
-                        <button className="text-slate-400 hover:text-slate-600">
-                            <MoreVertical size={20} />
-                        </button>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full text-sm">
                             <thead>
-                                <tr className="text-left border-b border-slate-100">
-                                    <th className="pb-4 font-bold text-slate-400">Patient Details</th>
-                                    <th className="pb-4 font-bold text-slate-400">Location</th>
-                                    <th className="pb-4 font-bold text-slate-400">KAM Assigned</th>
-                                    <th className="pb-4 font-bold text-slate-400 text-center">Status</th>
-                                    <th className="pb-4 font-bold text-slate-400 text-right">Processed</th>
+                                <tr className="text-left border-b border-slate-200 bg-slate-50">
+                                    <th className="p-3 font-black text-slate-700">Row Labels</th>
+                                    <th className="p-3 font-black text-slate-700 text-right">Count of Orders</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {recentOrders.map((order: any) => (
-                                    <tr key={order.id} className="group transition-colors hover:bg-slate-50/50">
-                                        <td className="py-4">
-                                            <div className="font-bold text-slate-800">{order.patient?.name || 'Unknown Patient'}</div>
-                                            <div className="text-xs text-slate-400 font-medium tracking-tight">ID: #{order.id.slice(-6).toUpperCase()}</div>
-                                        </td>
-                                        <td className="py-4">
-                                            <div className="text-sm font-semibold text-slate-600 flex items-center gap-1">
-                                                <MapPin size={14} className="text-slate-400" />
-                                                {order.city?.name || 'Unknown City'}
-                                            </div>
-                                        </td>
-                                        <td className="py-4">
-                                            <div className="text-sm font-bold text-slate-700">{order.kam?.name || '---'}</div>
-                                        </td>
-                                        <td className="py-4 text-center">
-                                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${order.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                                                }`}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 text-right text-sm font-bold text-slate-500">
-                                            {new Date(order.createdAt).toLocaleDateString()}
-                                        </td>
-                                    </tr>
+                            <tbody className="divide-y divide-slate-100">
+                                {Object.keys(pivotData).map(dateStr => (
+                                    <React.Fragment key={dateStr}>
+                                        <tr className="bg-sky-50/50">
+                                            <td className="p-3 font-black text-slate-800 flex items-center gap-2">
+                                                <div className="w-4 h-4 rounded border border-slate-300 flex items-center justify-center text-[10px] text-slate-500">-</div>
+                                                {dateStr}
+                                            </td>
+                                            <td className="p-3 font-black text-slate-800 text-right">
+                                                {Object.values(pivotData[dateStr]).reduce((a: any, b: any) => a + b, 0) as number}
+                                            </td>
+                                        </tr>
+                                        {Object.entries(pivotData[dateStr]).map(([kam, count]) => (
+                                            <tr key={`${dateStr}-${kam}`} className="hover:bg-slate-50">
+                                                <td className="p-3 pl-10 text-slate-600 font-medium text-sm">{kam}</td>
+                                                <td className="p-3 text-right text-slate-700 font-semibold">{count as React.ReactNode}</td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                {/* Performance Chart */}
-                <div className="space-y-6">
-                    <div className="card">
-                        <h3 className="text-lg font-black text-slate-800 tracking-tight mb-6">KAM Efficiency</h3>
-                        <KAMPerformanceChart data={kamData} />
+                {/* Device Installation / Expiry Table */}
+                <div className="card">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Device Installations</h3>
+                            <p className="text-sm text-slate-500 font-medium">Active installations and expiry tracking.</p>
+                        </div>
                     </div>
 
-                    <div className="card bg-primary p-6 text-white relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                            <TrendingUp size={80} />
-                        </div>
-                        <div className="relative z-10">
-                            <h4 className="text-white/80 font-bold uppercase tracking-widest text-xs mb-1">Logistics Health</h4>
-                            <p className="text-2xl font-black mb-4">Stable</p>
-                            <div className="text-sm font-medium text-white/90 leading-relaxed">
-                                All distributor networks are reporting active stock levels. No disruptions detected in major hubs.
-                            </div>
-                        </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-left border-b border-slate-200 bg-slate-50">
+                                    <th className="p-3 font-black text-slate-700">Patient Details</th>
+                                    <th className="p-3 font-black text-slate-700">Installation Date</th>
+                                    <th className="p-3 font-black text-slate-700 text-right">Expire Days</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {installations.map((inst: any) => {
+                                    const instDate = new Date(inst.visitDate);
+                                    const expiryDate = new Date(instDate);
+                                    expiryDate.setDate(expiryDate.getDate() + 15);
+
+                                    const diffTime = expiryDate.getTime() - today.getTime();
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                    const isExpired = diffDays <= 0;
+                                    const isWarning = diffDays > 0 && diffDays <= 3;
+
+                                    return (
+                                        <tr key={inst.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="p-3">
+                                                <div className="font-bold text-slate-800">{inst.patientName || inst.patient?.name || 'Unknown'}</div>
+                                                <div className="text-xs text-slate-400 font-medium tracking-tight">SN: {inst.serialNumber || 'N/A'}</div>
+                                            </td>
+                                            <td className="p-3 font-medium text-slate-600">
+                                                {instDate.toLocaleDateString()}
+                                            </td>
+                                            <td className="p-3 text-right">
+                                                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${isExpired ? 'bg-rose-100 text-rose-700' :
+                                                    isWarning ? 'bg-amber-100 text-amber-700' :
+                                                        'bg-emerald-100 text-emerald-700'
+                                                    }`}>
+                                                    {isExpired ? 'Expired' : `${diffDays} Days`}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
