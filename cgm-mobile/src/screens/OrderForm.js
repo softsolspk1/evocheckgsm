@@ -59,8 +59,15 @@ const OrderForm = ({ navigation, user }) => {
 
     const handleSubmit = async () => {
         // Validation
-        if (!formData.patientName || !formData.patientPhone || !formData.cityId || !formData.orderTo || !formData.serialNumber || !formData.product) {
-            Alert.alert('Fields Required', 'Required: Name, Phone, City, Order To, Product and Serial Number.');
+        const isFOC = formData.orderType === 'FOC';
+
+        if (!isFOC && (!formData.patientName || !formData.patientPhone || !formData.cityId)) {
+            Alert.alert('Fields Required', 'Patient Name, Phone, and City are required for Regular Orders.');
+            return;
+        }
+
+        if (!formData.orderTo || !formData.serialNumber || !formData.product) {
+            Alert.alert('Fields Required', 'Order To, Product and Serial Number are required.');
             return;
         }
 
@@ -71,7 +78,16 @@ const OrderForm = ({ navigation, user }) => {
 
         try {
             setLoading(true);
-            await apiService.createOrder(formData);
+
+            // Prepare payload
+            const submitData = { ...formData };
+            if (isFOC) {
+                submitData.patientName = `FOC Patient - ${formData.doctorName || 'Dr'}`;
+                submitData.patientPhone = '00000000000';
+                submitData.cityId = formData.cityId || cities[0]?.id; // Ensure some city is passed to avoid backend crash
+            }
+
+            await apiService.createOrder(submitData);
             Alert.alert(
                 'Order Placed',
                 'New order has been successfully synchronized.',
@@ -159,20 +175,24 @@ const OrderForm = ({ navigation, user }) => {
                         ], 'Select Type')}
                     </View>
 
-                    <View style={styles.header}>
-                        <Text style={styles.subtitle}>PATIENT DETAILS</Text>
-                    </View>
+                    {formData.orderType !== 'FOC' && (
+                        <>
+                            <View style={styles.header}>
+                                <Text style={styles.subtitle}>PATIENT DETAILS</Text>
+                            </View>
 
-                    <View style={styles.section}>
-                        {renderInput('PHONE NUMBER *', 'patientPhone', '03xx-xxxxxxx', Phone, 'phone-pad')}
-                        {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
-                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                            <View style={{ flex: 1 }}>{renderInput('AGE', 'age', 'Age', User, 'numeric')}</View>
-                            <View style={{ flex: 1 }}>{renderSelect('GENDER', 'gender', [{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }], 'Gender')}</View>
-                        </View>
-                        {renderSelect('SELECT CITY *', 'cityId', cities, 'City')}
-                        {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
-                    </View>
+                            <View style={styles.section}>
+                                {renderInput('PHONE NUMBER *', 'patientPhone', '03xx-xxxxxxx', Phone, 'phone-pad')}
+                                {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <View style={{ flex: 1 }}>{renderInput('AGE', 'age', 'Age', User, 'numeric')}</View>
+                                    <View style={{ flex: 1 }}>{renderSelect('GENDER', 'gender', [{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }], 'Gender')}</View>
+                                </View>
+                                {renderSelect('SELECT CITY *', 'cityId', cities, 'City')}
+                                {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
+                            </View>
+                        </>
+                    )}
 
                     <View style={styles.header}>
                         <Text style={styles.subtitle}>PROFESSIONAL INFO</Text>
