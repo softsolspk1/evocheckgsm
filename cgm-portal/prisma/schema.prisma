@@ -140,6 +140,7 @@ model ReplacementRequest {
   comments        String?
   appPicture      String?
   boxPicture      String?
+  armPicture      String?
   status          RequestStatus @default(PENDING)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

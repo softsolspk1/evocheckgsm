@@ -27,6 +27,7 @@ export async function POST(req: Request) {
                 comments: body.comments,
                 appPicture: body.appPicture,
                 boxPicture: body.boxPicture,
+                armPicture: body.armPicture,
                 status: 'PENDING'
             }
         });

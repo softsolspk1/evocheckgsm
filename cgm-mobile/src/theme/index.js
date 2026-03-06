@@ -1,12 +1,12 @@
 export const theme = {
     colors: {
-        primary: '#3B82F6', // Light Blue
-        secondary: '#0F172A', // Dark Slate (for text/accents)
+        primary: '#2563EB', // Deeper Blue
+        secondary: '#0F172A',
         background: '#FFFFFF',
         surface: '#F8FAFC',
-        text: '#1E293B',
-        textLight: '#94A3B8',
-        border: '#E2E8F0',
+        text: '#0F172A', // Dark Slate 900
+        textLight: '#475569', // Slate 600 (darker)
+        border: '#CBD5E1', // Slate 300
         error: '#EF4444',
         success: '#10B981',
         warning: '#F59E0B'

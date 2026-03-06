@@ -3,13 +3,16 @@ import { Calendar, Clock, User, Hash, MapPin, ChevronDown, Save, X } from 'lucid
 import { StyleSheet, View, Text, ScrollView, TextInput, TouchableOpacity, SafeAreaView, Alert, Platform, Modal, ActivityIndicator } from 'react-native';
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
+import Dropdown from '../../components/Dropdown';
 
 const SubmissionForm = ({ route, navigation, user }) => {
     const orderData = route.params?.order || {};
 
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState([]);
+    const [distributors, setDistributors] = useState([]);
     const [searching, setSearching] = useState(false);
+    const [fetchingDistributors, setFetchingDistributors] = useState(true);
     const [formData, setFormData] = useState({
         orderId: orderData.id || '',
         kamName: user?.name || '',
@@ -40,7 +43,20 @@ const SubmissionForm = ({ route, navigation, user }) => {
 
     React.useEffect(() => {
         fetchOrders();
+        fetchDistributors();
     }, []);
+
+    const fetchDistributors = async () => {
+        try {
+            const data = await apiService.getDistributors();
+            // Filter only Service Providers
+            setDistributors(data.filter(d => d.type === 'SERVICE_PROVIDER'));
+        } catch (error) {
+            console.error('Failed to fetch distributors:', error);
+        } finally {
+            setFetchingDistributors(false);
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -52,8 +68,9 @@ const SubmissionForm = ({ route, navigation, user }) => {
     };
 
     const handleOrderSelect = (order) => {
-        setFormData({
-            ...formData,
+        console.log('Selected Order:', order.id);
+        setFormData(prev => ({
+            ...prev,
             orderId: order.id,
             region: order.city?.region || '',
             city: order.city?.name || '',
@@ -65,7 +82,7 @@ const SubmissionForm = ({ route, navigation, user }) => {
             patientEmail: order.patient?.email || '',
             patientWhatsApp: order.patient?.phone || '',
             patientAddress: order.patient?.address || '',
-        });
+        }));
         setSearching(false);
     };
 
@@ -193,7 +210,13 @@ const SubmissionForm = ({ route, navigation, user }) => {
                     <Text style={styles.sectionTitle}>3. Clinical Information</Text>
                     {renderInput('DOCTOR NAME', 'doctorName', 'Dr. Name', User)}
                     {renderInput('DOCTOR CODE', 'doctorCode', '000000', Hash)}
-                    {renderInput('SERVICE PROVIDER (DISTRIBUTOR)', 'serviceProvider', 'Select Distributor', MapPin)}
+                    <Dropdown
+                        label="SERVICE PROVIDER (DISTRIBUTOR) *"
+                        data={distributors.map(d => ({ id: d.name, name: `${d.name} (${d.city?.name || ''})` }))}
+                        value={formData.serviceProvider}
+                        onSelect={(val) => setFormData({ ...formData, serviceProvider: val })}
+                        placeholder="Select Service Provider"
+                    />
                 </View>
 
                 <View style={styles.section}>
@@ -214,7 +237,13 @@ const SubmissionForm = ({ route, navigation, user }) => {
                         <View style={{ flex: 1 }}>{renderInput('VISIT TIME', 'visitTime', 'HH:MM', Clock)}</View>
                     </View>
 
-                    {renderInput('NUMBER OF DEVICES', 'numberOfDevices', '1', Hash, 'numeric')}
+                    <Dropdown
+                        label="NUMBER OF DEVICES"
+                        data={[1, 2, 3, 4, 5].map(n => ({ id: n.toString(), name: n.toString() }))}
+                        value={formData.numberOfDevices}
+                        onSelect={(val) => setFormData({ ...formData, numberOfDevices: val })}
+                        placeholder="Select Qty"
+                    />
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: theme.colors.secondary }]}>CGM SERIAL NUMBER (10 CHARS) *</Text>

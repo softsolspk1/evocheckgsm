@@ -4,9 +4,10 @@ import {
     TextInput, TouchableOpacity, SafeAreaView,
     Alert, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
-import { RotateCcw, Search, Save, ArrowLeft, Calendar, FileText } from 'lucide-react-native';
+import { RotateCcw, Search, Save, ArrowLeft, Calendar, FileText, Camera } from 'lucide-react-native';
 import { theme } from '../../theme';
 import { apiService } from '../../services/api';
+import * as ImagePicker from 'expo-image-picker';
 
 const ReplacementRequestForm = ({ navigation, user }) => {
     const [loading, setLoading] = useState(false);
@@ -16,8 +17,72 @@ const ReplacementRequestForm = ({ navigation, user }) => {
         month: '',
         cgmSerialNumber: '',
         daysRemaining: '',
-        reason: 'DEFECTIVE'
+        reason: 'DEFECTIVE',
+        appPicture: null,
+        boxPicture: null,
+        armPicture: null
     });
+
+    const pickImage = async (field) => {
+        Alert.alert(
+            'Select Image Source',
+            'Choose where you want to pick the image from:',
+            [
+                {
+                    text: 'Camera',
+                    onPress: () => launchCamera(field)
+                },
+                {
+                    text: 'Media Library',
+                    onPress: () => launchLibrary(field)
+                },
+                {
+                    text: 'Cancel',
+                    style: 'cancel'
+                }
+            ]
+        );
+    };
+
+    const launchCamera = async (field) => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Sorry, we need camera permissions to take photos.');
+            return;
+        }
+
+        let result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+            base64: true
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setFormData({ ...formData, [field]: `data:image/jpeg;base64,${result.assets[0].base64}` });
+        }
+    };
+
+    const launchLibrary = async (field) => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to upload images.');
+            return;
+        }
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+            base64: true
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setFormData({ ...formData, [field]: `data:image/jpeg;base64,${result.assets[0].base64}` });
+        }
+    };
 
     const handleSubmit = async () => {
         if (!formData.cgmSerialNumber || !formData.month || !formData.daysRemaining) {
@@ -79,7 +144,21 @@ const ReplacementRequestForm = ({ navigation, user }) => {
                     <View style={styles.section}>
                         {renderInput('PATIENT NAME', 'patientName', 'Full Name', Search)}
                         {renderInput('REPLACEMENT MONTH *', 'month', 'e.g. March 2026', Calendar)}
-                        {renderInput('CGM SERIAL NUMBER *', 'cgmSerialNumber', '10-character serial', Search, 'default', 10)}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: theme.colors.secondary }]}>CGM SERIAL NUMBER (10 CHARS) *</Text>
+                            <View style={[styles.inputWrapper, { borderColor: theme.colors.secondary, borderWidth: 2 }]}>
+                                <Search size={18} color={theme.colors.secondary} style={styles.icon} />
+                                <TextInput
+                                    style={[styles.input, { fontWeight: '900', letterSpacing: 2 }]}
+                                    placeholder="SNXXXXXXXX"
+                                    placeholderTextColor={theme.colors.textLight}
+                                    value={formData.cgmSerialNumber}
+                                    maxLength={10}
+                                    autoCapitalize="characters"
+                                    onChangeText={(text) => setFormData({ ...formData, cgmSerialNumber: text.toUpperCase() })}
+                                />
+                            </View>
+                        </View>
                         {renderInput('DAYS REMAINING *', 'daysRemaining', 'Days left on current sensor', FileText, 'numeric')}
 
                         <View style={styles.inputGroup}>
@@ -101,6 +180,30 @@ const ReplacementRequestForm = ({ navigation, user }) => {
                                     </TouchableOpacity>
                                 ))}
                             </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>IMAGE EVIDENCE (REQUIRED)</Text>
+
+                        <View style={styles.imageUploadRow}>
+                            <TouchableOpacity style={styles.imageUploadBtn} onPress={() => pickImage('appPicture')}>
+                                <Camera size={24} color={formData.appPicture ? theme.colors.success : theme.colors.primary} />
+                                <Text style={styles.imageUploadText}>App Dashboard</Text>
+                                {formData.appPicture && <Text style={styles.uploadedText}>Uploaded ✓</Text>}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.imageUploadBtn} onPress={() => pickImage('boxPicture')}>
+                                <Camera size={24} color={formData.boxPicture ? theme.colors.success : theme.colors.primary} />
+                                <Text style={styles.imageUploadText}>Box Serial Number</Text>
+                                {formData.boxPicture && <Text style={styles.uploadedText}>Uploaded ✓</Text>}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.imageUploadBtn} onPress={() => pickImage('armPicture')}>
+                                <Camera size={24} color={formData.armPicture ? theme.colors.success : theme.colors.primary} />
+                                <Text style={styles.imageUploadText}>Device on Arm</Text>
+                                {formData.armPicture && <Text style={styles.uploadedText}>Uploaded ✓</Text>}
+                            </TouchableOpacity>
                         </View>
                     </View>
 
@@ -158,6 +261,13 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.lg,
         borderWidth: 1,
         borderColor: theme.colors.border,
+    },
+    sectionTitle: {
+        fontSize: 11,
+        fontWeight: '900',
+        color: theme.colors.primary,
+        marginBottom: 16,
+        letterSpacing: 1,
     },
     inputGroup: {
         marginBottom: theme.spacing.md,
@@ -231,6 +341,36 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '900',
+    },
+    imageUploadRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
+    imageUploadBtn: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderStyle: 'dashed',
+        borderRadius: 12,
+        padding: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.surface,
+        minHeight: 110,
+    },
+    imageUploadText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: theme.colors.textLight,
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    uploadedText: {
+        fontSize: 9,
+        fontWeight: '900',
+        color: theme.colors.success,
+        marginTop: 4,
     }
 });
 

@@ -64,11 +64,29 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
         setLoading(true);
         setError('');
 
+        if (formData.serialNumber && formData.serialNumber.length !== 10) {
+            setError('Serial Number must be exactly 10 characters.');
+            setLoading(false);
+            return;
+        }
+
+        const submitData = { ...formData };
+        if (submitData.orderType === 'FOC') {
+            submitData.patientName = 'FOC Patient ' + Date.now().toString().slice(-4);
+            submitData.patientPhone = '0000000000';
+            submitData.age = 0;
+            submitData.gender = 'Other';
+            submitData.patientAddress = 'FOC Order Address';
+            if (!submitData.cityId && cities.length > 0) {
+                submitData.cityId = cities[0].id;
+            }
+        }
+
         try {
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(submitData),
             });
 
             if (!res.ok) {
@@ -125,83 +143,85 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({ isOpen, onClose, onSu
                             </select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className={`grid ${formData.orderType !== 'FOC' ? 'grid-cols-2' : 'grid-cols-1'} gap-8`}>
                             {/* Left Column: Patient Details */}
-                            <div className="space-y-4">
-                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Patient Information</h4>
-                                <div className="field-group">
-                                    <label className="label">Patient Mobile*</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="input"
-                                        placeholder="03xx-xxxxxxx"
-                                        value={formData.patientPhone}
-                                        onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
-                                    />
-                                </div>
-                                <div className="field-group">
-                                    <label className="label">Patient Name*</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="input"
-                                        placeholder="Full Name"
-                                        value={formData.patientName}
-                                        onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                            {formData.orderType !== 'FOC' && (
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Patient Information</h4>
                                     <div className="field-group">
-                                        <label className="label">Age*</label>
+                                        <label className="label">Patient Mobile*</label>
                                         <input
-                                            type="number"
+                                            type="text"
                                             required
                                             className="input"
-                                            placeholder="Age"
-                                            value={formData.age}
-                                            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                            placeholder="03xx-xxxxxxx"
+                                            value={formData.patientPhone}
+                                            onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                                         />
                                     </div>
                                     <div className="field-group">
-                                        <label className="label">Gender*</label>
+                                        <label className="label">Patient Name*</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="input"
+                                            placeholder="Full Name"
+                                            value={formData.patientName}
+                                            onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="field-group">
+                                            <label className="label">Age*</label>
+                                            <input
+                                                type="number"
+                                                required
+                                                className="input"
+                                                placeholder="Age"
+                                                value={formData.age}
+                                                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="label">Gender*</label>
+                                            <select
+                                                required
+                                                className="input"
+                                                value={formData.gender}
+                                                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                            >
+                                                <option value="">Select Gender</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="field-group">
+                                        <label className="label">City*</label>
                                         <select
                                             required
                                             className="input"
-                                            value={formData.gender}
-                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                            value={formData.cityId}
+                                            onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
                                         >
-                                            <option value="">Select Gender</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
+                                            <option value="">Select City</option>
+                                            {cities.map((c) => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
                                         </select>
                                     </div>
+                                    <div className="field-group">
+                                        <label className="label">Address*</label>
+                                        <textarea
+                                            required
+                                            className="input min-h-[80px]"
+                                            placeholder="Full Address"
+                                            value={formData.patientAddress}
+                                            onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="field-group">
-                                    <label className="label">City*</label>
-                                    <select
-                                        required
-                                        className="input"
-                                        value={formData.cityId}
-                                        onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
-                                    >
-                                        <option value="">Select City</option>
-                                        {cities.map((c) => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="field-group">
-                                    <label className="label">Address*</label>
-                                    <textarea
-                                        required
-                                        className="input min-h-[80px]"
-                                        placeholder="Full Address"
-                                        value={formData.patientAddress}
-                                        onChange={(e) => setFormData({ ...formData, patientAddress: e.target.value })}
-                                    />
-                                </div>
-                            </div>
+                            )}
 
                             {/* Right Column: Order Details */}
                             <div className="space-y-4">

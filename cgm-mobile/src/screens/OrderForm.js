@@ -4,9 +4,11 @@ import {
     TextInput, TouchableOpacity, SafeAreaView,
     Alert, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
-import { ShoppingBag, User, Phone, MapPin, Search, PlusCircle, Save } from 'lucide-react-native';
+import { ShoppingBag, User, Phone, MapPin, Search, PlusCircle, Save, Camera } from 'lucide-react-native';
 import { theme } from '../theme';
 import { apiService } from '../services/api';
+import Dropdown from '../components/Dropdown';
+import * as ImagePicker from 'expo-image-picker';
 
 const OrderForm = ({ navigation, user }) => {
     const [loading, setLoading] = useState(false);
@@ -47,13 +49,59 @@ const OrderForm = ({ navigation, user }) => {
                 apiService.getCities(),
                 apiService.getDistributors()
             ]);
-            setCities(citiesData);
-            setDistributors(distData);
+            setCities(citiesData || []);
+            setDistributors(distData || []);
         } catch (error) {
             console.error('Data load error:', error);
             Alert.alert('System Error', 'Failed to load cities/distributors data.');
         } finally {
             setFetchingData(false);
+        }
+    };
+
+    const pickImage = async (field) => {
+        Alert.alert(
+            'Prescription Source',
+            'Choose where you want to pick the prescription from:',
+            [
+                { text: 'Camera', onPress: () => launchCamera(field) },
+                { text: 'Media Library', onPress: () => launchLibrary(field) },
+                { text: 'Cancel', style: 'cancel' }
+            ]
+        );
+    };
+
+    const launchCamera = async (field) => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Sorry, we need camera permissions to take photos.');
+            return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.5,
+            base64: true
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setFormData({ ...formData, [field]: `data:image/jpeg;base64,${result.assets[0].base64}` });
+        }
+    };
+
+    const launchLibrary = async (field) => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Sorry, we need camera roll permissions.');
+            return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.5,
+            base64: true
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setFormData({ ...formData, [field]: `data:image/jpeg;base64,${result.assets[0].base64}` });
         }
     };
 
@@ -66,8 +114,8 @@ const OrderForm = ({ navigation, user }) => {
             return;
         }
 
-        if (!formData.orderTo || !formData.serialNumber || !formData.product) {
-            Alert.alert('Fields Required', 'Order To, Product and Serial Number are required.');
+        if (!formData.orderTo || !formData.serialNumber || !formData.product || !formData.distributorId) {
+            Alert.alert('Fields Required', 'Order To, Distributor, Product and Serial Number are required.');
             return;
         }
 
@@ -120,34 +168,7 @@ const OrderForm = ({ navigation, user }) => {
         );
     };
 
-    const renderSelect = (label, key, data, placeholder) => {
-        return (
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>{label}</Text>
-                <View style={styles.selectScrollWrapper}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.selectionRow}>
-                            {data.map((item) => (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    style={[
-                                        styles.selectionChip,
-                                        formData[key] === item.id && styles.selectionChipActive
-                                    ]}
-                                    onPress={() => setFormData({ ...formData, [key]: item.id })}
-                                >
-                                    <Text style={[
-                                        styles.selectionChipText,
-                                        formData[key] === item.id && styles.selectionChipTextActive
-                                    ]}>{item.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-            </View>
-        );
-    };
+    // Dropdown replaced renderSelect
 
     if (fetchingData) {
         return (
@@ -169,10 +190,16 @@ const OrderForm = ({ navigation, user }) => {
                     </View>
 
                     <View style={styles.section}>
-                        {renderSelect('ORDER TYPE *', 'orderType', [
-                            { id: 'REGULAR', name: 'Regular Order' },
-                            { id: 'FOC', name: 'FOC' }
-                        ], 'Select Type')}
+                        <Dropdown
+                            label="ORDER TYPE *"
+                            data={[
+                                { id: 'REGULAR', name: 'Regular Order' },
+                                { id: 'FOC', name: 'FOC' }
+                            ]}
+                            value={formData.orderType}
+                            onSelect={(val) => setFormData({ ...formData, orderType: val })}
+                            placeholder="Select Type"
+                        />
                     </View>
 
                     {formData.orderType !== 'FOC' && (
@@ -186,9 +213,23 @@ const OrderForm = ({ navigation, user }) => {
                                 {renderInput('PATIENT NAME *', 'patientName', 'Full Name', User)}
                                 <View style={{ flexDirection: 'row', gap: 12 }}>
                                     <View style={{ flex: 1 }}>{renderInput('AGE', 'age', 'Age', User, 'numeric')}</View>
-                                    <View style={{ flex: 1 }}>{renderSelect('GENDER', 'gender', [{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }], 'Gender')}</View>
+                                    <View style={{ flex: 1 }}>
+                                        <Dropdown
+                                            label="GENDER"
+                                            data={[{ id: 'Male', name: 'Male' }, { id: 'Female', name: 'Female' }]}
+                                            value={formData.gender}
+                                            onSelect={(val) => setFormData({ ...formData, gender: val })}
+                                            placeholder="Gender"
+                                        />
+                                    </View>
                                 </View>
-                                {renderSelect('SELECT CITY *', 'cityId', cities, 'City')}
+                                <Dropdown
+                                    label="SELECT CITY *"
+                                    data={cities}
+                                    value={formData.cityId}
+                                    onSelect={(val) => setFormData({ ...formData, cityId: val })}
+                                    placeholder="City"
+                                />
                                 {renderInput('HOME ADDRESS', 'patientAddress', 'Residential Address', MapPin)}
                             </View>
                         </>
@@ -202,9 +243,15 @@ const OrderForm = ({ navigation, user }) => {
                         {renderInput('DOCTOR NAME', 'doctorName', 'Dr. Name', Search)}
                         {renderInput('CLINIC / HOSPITAL', 'clinicHospital', 'Clinic/Hospital Name', MapPin)}
                         {renderInput('DOCTOR CITY', 'doctorCity', 'City', MapPin)}
-                        {renderSelect('PRODUCT *', 'product', [
-                            { id: 'EVOCHECK PREMIUM LINX CGM 1S - Rs.12900', name: 'EVOCHECK PREMIUM LINX CGM 1S' }
-                        ], 'Select Product')}
+                        <Dropdown
+                            label="PRODUCT *"
+                            data={[
+                                { id: 'EVOCHECK PREMIUM LINX CGM 1S - Rs.12900', name: 'EVOCHECK PREMIUM LINX CGM 1S' }
+                            ]}
+                            value={formData.product}
+                            onSelect={(val) => setFormData({ ...formData, product: val })}
+                            placeholder="Select Product"
+                        />
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: theme.colors.secondary }]}>SERIAL NUMBER (10 CHARS) *</Text>
                             <View style={[styles.inputWrapper, { borderColor: theme.colors.secondary, borderWidth: 2 }]}>
@@ -221,13 +268,36 @@ const OrderForm = ({ navigation, user }) => {
                         </View>
                         <View style={{ flexDirection: 'row', gap: 12 }}>
                             <View style={{ flex: 1 }}>
-                                {renderSelect('STARTING MONTH', 'startingMonth', Array.from({ length: 12 }, (_, i) => ({ id: new Date(0, i).toLocaleString('en', { month: 'long' }), name: new Date(0, i).toLocaleString('en', { month: 'long' }) })), 'Select Month')}
+                                <Dropdown
+                                    label="STARTING MONTH"
+                                    data={Array.from({ length: 12 }, (_, i) => ({ id: new Date(0, i).toLocaleString('en', { month: 'long' }), name: new Date(0, i).toLocaleString('en', { month: 'long' }) }))}
+                                    value={formData.startingMonth}
+                                    onSelect={(val) => setFormData({ ...formData, startingMonth: val })}
+                                    placeholder="Select Month"
+                                />
                             </View>
                             <View style={{ flex: 1 }}>
-                                {renderSelect('QTY', 'quantity', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => ({ id: q.toString(), name: q.toString() })), 'Qty')}
+                                <Dropdown
+                                    label="QTY"
+                                    data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => ({ id: q.toString(), name: q.toString() }))}
+                                    value={formData.quantity}
+                                    onSelect={(val) => setFormData({ ...formData, quantity: val })}
+                                    placeholder="Qty"
+                                />
                             </View>
                         </View>
-                        {renderInput('PRESCRIPTION (UPLOAD)', 'prescription', 'Link or filename', Search)}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>PRESCRIPTION (REQUIRED) *</Text>
+                            <TouchableOpacity
+                                style={[styles.inputWrapper, formData.prescription && { borderColor: theme.colors.success }]}
+                                onPress={() => pickImage('prescription')}
+                            >
+                                <Camera size={18} color={formData.prescription ? theme.colors.success : theme.colors.textLight} style={styles.icon} />
+                                <Text style={[styles.input, { color: formData.prescription ? theme.colors.success : theme.colors.textLight }]}>
+                                    {formData.prescription ? 'Prescription Uploaded ✓' : 'Select Photo / Camera'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     <View style={styles.header}>
@@ -243,7 +313,7 @@ const OrderForm = ({ navigation, user }) => {
                                         styles.selectionChip,
                                         formData.orderTo === 'PREMIER' && styles.selectionChipActive
                                     ]}
-                                    onPress={() => setFormData({ ...formData, orderTo: 'PREMIER' })}
+                                    onPress={() => setFormData({ ...formData, orderTo: 'PREMIER', distributorId: '' })}
                                 >
                                     <Text style={[
                                         styles.selectionChipText,
@@ -255,7 +325,7 @@ const OrderForm = ({ navigation, user }) => {
                                         styles.selectionChip,
                                         formData.orderTo === 'SERVICE_PROVIDER' && styles.selectionChipActive
                                     ]}
-                                    onPress={() => setFormData({ ...formData, orderTo: 'SERVICE_PROVIDER' })}
+                                    onPress={() => setFormData({ ...formData, orderTo: 'SERVICE_PROVIDER', distributorId: '' })}
                                 >
                                     <Text style={[
                                         styles.selectionChipText,
@@ -264,7 +334,13 @@ const OrderForm = ({ navigation, user }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                        {renderSelect('SELECT DISTRIBUTOR', 'distributorId', distributors.filter(d => d.role === (formData.orderTo === 'PREMIER' ? 'DISTRIBUTOR' : 'SERVICE_PROVIDER')), 'Distributor')}
+                        <Dropdown
+                            label="SELECT DISTRIBUTOR"
+                            data={distributors.filter(d => d.type === (formData.orderTo === 'PREMIER' ? 'PREMIER' : 'SERVICE_PROVIDER'))}
+                            value={formData.distributorId}
+                            onSelect={(val) => setFormData({ ...formData, distributorId: val })}
+                            placeholder="Select Distributor"
+                        />
                     </View>
 
                     <TouchableOpacity
