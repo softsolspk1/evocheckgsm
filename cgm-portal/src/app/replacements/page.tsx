@@ -1,10 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, User, MapPin, Calendar, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { RotateCcw, User, MapPin, Calendar, Clock, CheckCircle, XCircle, Loader2, Eye } from 'lucide-react';
+import ReplacementDetailModal from '@/components/ReplacementDetailModal';
 
 export default function ReplacementsPage() {
     const [replacements, setReplacements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedReplacement, setSelectedReplacement] = useState<any>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     const fetchReplacements = async () => {
         setLoading(true);
@@ -12,6 +15,12 @@ export default function ReplacementsPage() {
             const res = await fetch('/api/replacements');
             const data = await res.json();
             setReplacements(Array.isArray(data) ? data : []);
+
+            // Update selected replacement if it's currently open in modal
+            if (selectedReplacement) {
+                const updated = data.find((r: any) => r.id === selectedReplacement.id);
+                if (updated) setSelectedReplacement(updated);
+            }
         } catch (err) {
             console.error('Failed to fetch replacements', err);
         } finally {
@@ -34,6 +43,11 @@ export default function ReplacementsPage() {
         } catch (err) {
             console.error('Failed to update replacement status', err);
         }
+    };
+
+    const openDetails = (replacement: any) => {
+        setSelectedReplacement(replacement);
+        setIsDetailModalOpen(true);
     };
 
     return (
@@ -87,31 +101,40 @@ export default function ReplacementsPage() {
                                         </td>
                                         <td className="py-5 px-2 text-center">
                                             <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${req.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                                                    req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
-                                                        'bg-rose-100 text-rose-700'
+                                                req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                                                    'bg-rose-100 text-rose-700'
                                                 }`}>
                                                 {req.status}
                                             </span>
                                         </td>
                                         <td className="py-5 px-2 text-right">
-                                            {req.status === 'PENDING' && (
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => updateStatus(req.id, 'APPROVED')}
-                                                        className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                                                        title="Approve"
-                                                    >
-                                                        <CheckCircle size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => updateStatus(req.id, 'REJECTED')}
-                                                        className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                                        title="Reject"
-                                                    >
-                                                        <XCircle size={16} />
-                                                    </button>
-                                                </div>
-                                            )}
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => openDetails(req)}
+                                                    className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
+                                                {req.status === 'PENDING' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => updateStatus(req.id, 'APPROVED')}
+                                                            className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                                                            title="Approve"
+                                                        >
+                                                            <CheckCircle size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => updateStatus(req.id, 'REJECTED')}
+                                                            className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                            title="Reject"
+                                                        >
+                                                            <XCircle size={16} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 )) : (
@@ -126,6 +149,13 @@ export default function ReplacementsPage() {
                     </div>
                 )}
             </div>
+
+            <ReplacementDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                replacement={selectedReplacement}
+                onUpdateStatus={updateStatus}
+            />
         </div>
     );
 }
