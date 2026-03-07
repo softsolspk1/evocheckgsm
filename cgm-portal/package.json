@@ -12,6 +12,7 @@
   "dependencies": {
     "@prisma/client": "^6.2.0",
     "autoprefixer": "^10.4.24",
+    "cloudinary": "^2.9.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.468.0",

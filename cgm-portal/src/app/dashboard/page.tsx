@@ -62,34 +62,61 @@ const Dashboard = async ({ searchParams }: PageProps) => {
         }),
     ]);
 
-    // Fetch Chart Data
+    // Fetch Chart Data - Geographic Spread filtered by date
     const cityDistributionData = await prisma.city.findMany({
-        include: { _count: { select: { orders: true } } }
+        include: {
+            _count: {
+                select: {
+                    orders: {
+                        where: { createdAt: { gte: startDate } }
+                    }
+                }
+            }
+        }
     });
 
-    // Trend data
-    const monthStart = new Date();
-    monthStart.setHours(0, 0, 0, 0);
-    monthStart.setDate(1);
+    // Trend data aggregation based on range
+    let trendData: { date: string; orders: number }[] = [];
 
-    const dailyOrders = await prisma.order.groupBy({
-        by: ['createdAt'],
-        _count: { id: true },
-        where: { createdAt: { gte: monthStart } }
-    });
+    if (range === 'today') {
+        // Hourly for today
+        const hourlyOrders = await prisma.order.findMany({
+            where: { createdAt: { gte: startDate } },
+            select: { createdAt: true }
+        });
+        const hours: any = {};
+        hourlyOrders.forEach(o => {
+            const h = new Date(o.createdAt).getHours();
+            const label = `${h}:00`;
+            hours[label] = (hours[label] || 0) + 1;
+        });
+        trendData = Object.entries(hours).map(([date, orders]) => ({ date, orders: orders as number }));
+    } else if (range === 'month') {
+        const dailyOrders = await prisma.order.groupBy({
+            by: ['createdAt'],
+            _count: { id: true },
+            where: { createdAt: { gte: startDate } }
+        });
+        const dates: any = {};
+        dailyOrders.forEach(o => {
+            const d = new Date(o.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            dates[d] = (dates[d] || 0) + o._count.id;
+        });
+        trendData = Object.entries(dates).map(([date, orders]) => ({ date, orders: orders as number }));
+    } else { // YTD
+        const monthlyOrders = await prisma.order.findMany({
+            where: { createdAt: { gte: startDate } },
+            select: { createdAt: true }
+        });
+        const months: any = {};
+        monthlyOrders.forEach(o => {
+            const m = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short' });
+            months[m] = (months[m] || 0) + 1;
+        });
+        trendData = Object.entries(months).map(([date, orders]) => ({ date, orders: orders as number }));
+    }
 
-    const ordersByDate = dailyOrders.reduce((acc: any, curr: any) => {
-        const date = new Date(curr.createdAt).toLocaleDateString();
-        acc[date] = (acc[date] || 0) + curr._count.id;
-        return acc;
-    }, {});
-
-    const fullMonthTrend = Object.entries(ordersByDate).map(([date, count]) => ({
-        date,
-        orders: count as number
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    const orderTrend = fullMonthTrend.slice(-7);
+    trendData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const installations = await prisma.postAdministrationForm.findMany({
         take: 10,
@@ -100,7 +127,7 @@ const Dashboard = async ({ searchParams }: PageProps) => {
     const recentOrdersAnalytics = await prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         where: {
-            createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } // Last 7 days for the table
+            createdAt: { gte: startDate } // Sync with top filter
         },
         include: { kam: true, patient: true }
     });
@@ -179,9 +206,9 @@ const Dashboard = async ({ searchParams }: PageProps) => {
 
             {/* Charts Section */}
             <DashboardCharts
-                orderTrend={orderTrend}
+                trendData={trendData}
                 cityDistribution={cityDistributionData.map(c => ({ name: c.name, orders: c._count.orders }))}
-                fullMonthTrend={fullMonthTrend}
+                range={range}
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
