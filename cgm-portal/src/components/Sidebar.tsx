@@ -26,16 +26,14 @@ import { useRouter } from 'next/navigation';
 const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Orders", href: "/orders", icon: ShoppingCart, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
+    { name: "Patients", href: "/patients", icon: Users, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Replacement Requests", href: "/replacements", icon: RotateCcw, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
-    { name: "Refund Requests", href: "/refunds", icon: RefreshCw, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Doctor Visits", href: "/doctor-visits", icon: Stethoscope, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
+    { name: "KAM", href: "/kam", icon: UserSquare2, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
+    { name: "City", href: "/city", icon: Globe, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
+    { name: "Area", href: "/area", icon: MapPin, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
+    { name: "Distributor", href: "/distributor", icon: Truck, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Device Tracking", href: "/device-tracking", icon: LocateFixed, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
-    { name: "Patients", href: "/patients", icon: Users, roles: ["SUPER_ADMIN"] },
-    { name: "City", href: "/city", icon: Globe, roles: ["SUPER_ADMIN"] },
-    { name: "Area", href: "/area", icon: MapPin, roles: ["SUPER_ADMIN"] },
-    { name: "Distributor", href: "/distributor", icon: Truck, roles: ["SUPER_ADMIN"] },
-    { name: "KAM", href: "/kam", icon: UserSquare2, roles: ["SUPER_ADMIN"] },
-    { name: "Reports", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
     { name: "Inventory", href: "/inventory", icon: Package, roles: ["SUPER_ADMIN", "SUB_ADMIN"] },
     { name: "Users", href: "/users", icon: Users2, roles: ["SUPER_ADMIN"] },
 ];
@@ -53,7 +51,7 @@ export default function Sidebar() {
                 setUserRole(user.role);
 
                 // Restricted pages for SUB_ADMIN
-                const restrictedPaths = ['/patients', '/city', '/area', '/distributor', '/kam', '/reports', '/users'];
+                const restrictedPaths = ['/reports', '/users'];
                 if (user.role === 'SUB_ADMIN' && restrictedPaths.some(p => pathname.startsWith(p))) {
                     router.push('/dashboard');
                 }
