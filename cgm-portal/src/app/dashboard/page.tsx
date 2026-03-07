@@ -3,45 +3,60 @@ import React from 'react';
 import {
     ShoppingCart,
     TrendingUp,
-    UserPlus,
-    Truck,
-    Calendar,
-    ArrowUpRight,
-    ArrowDownRight,
     Users,
     Activity,
     PackageCheck,
-    RefreshCw
+    RefreshCw,
+    Calendar
 } from 'lucide-react';
 
 import DashboardCharts from '@/components/DashboardCharts';
+import FilterButtons from '@/components/FilterButtons';
 
 export const dynamic = 'force-dynamic';
 
-const Dashboard = async () => {
+interface PageProps {
+    searchParams: { [key: string]: string | string[] | undefined };
+}
+
+const Dashboard = async ({ searchParams }: PageProps) => {
+    const range = (searchParams.range as string) || 'today';
     const today = new Date();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+
+    // Calculate start date based on range
+    const getStartDate = () => {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+
+        if (range === 'month') {
+            start.setDate(1);
+        } else if (range === 'ytd') {
+            start.setMonth(0, 1);
+        }
+        return start;
+    };
+
+    const startDate = getStartDate();
 
     const [
-        todayOrders,
-        todayVisits,
-        todayInstallations,
-        todayReplacements,
-        todayPatients,
-        todaySupplied
+        statsOrders,
+        statsVisits,
+        statsInstallations,
+        statsReplacements,
+        statsPatients,
+        statsSupplied
     ] = await Promise.all([
-        prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
+        prisma.order.count({ where: { createdAt: { gte: startDate } } }),
         prisma.doctorVisit.aggregate({
-            where: { visitDate: { gte: todayStart } },
+            where: { visitDate: { gte: startDate } },
             _sum: { visitCount: true }
         }).then(res => res._sum.visitCount || 0),
-        prisma.postAdministrationForm.count({ where: { createdAt: { gte: todayStart } } }),
-        prisma.replacementRequest.count({ where: { createdAt: { gte: todayStart } } }),
-        prisma.patient.count({ where: { createdAt: { gte: todayStart } } }),
+        prisma.postAdministrationForm.count({ where: { createdAt: { gte: startDate } } }),
+        prisma.replacementRequest.count({ where: { createdAt: { gte: startDate } } }),
+        prisma.patient.count({ where: { createdAt: { gte: startDate } } }),
         prisma.order.count({
             where: {
-                updatedAt: { gte: todayStart },
+                updatedAt: { gte: startDate },
                 status: { in: ['DELIVERED', 'COMPLETED'] }
             }
         }),
@@ -52,10 +67,15 @@ const Dashboard = async () => {
         include: { _count: { select: { orders: true } } }
     });
 
+    // Trend data
+    const monthStart = new Date();
+    monthStart.setHours(0, 0, 0, 0);
+    monthStart.setDate(1);
+
     const dailyOrders = await prisma.order.groupBy({
         by: ['createdAt'],
         _count: { id: true },
-        orderBy: { createdAt: 'asc' }
+        where: { createdAt: { gte: monthStart } }
     });
 
     const ordersByDate = dailyOrders.reduce((acc: any, curr: any) => {
@@ -64,10 +84,12 @@ const Dashboard = async () => {
         return acc;
     }, {});
 
-    const orderTrend = Object.entries(ordersByDate).map(([date, count]) => ({
+    const fullMonthTrend = Object.entries(ordersByDate).map(([date, count]) => ({
         date,
         orders: count as number
-    })).slice(-7);
+    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const orderTrend = fullMonthTrend.slice(-7);
 
     const installations = await prisma.postAdministrationForm.findMany({
         take: 10,
@@ -78,12 +100,11 @@ const Dashboard = async () => {
     const recentOrdersAnalytics = await prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         where: {
-            createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } // Last 7 days
+            createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } // Last 7 days for the table
         },
         include: { kam: true, patient: true }
     });
 
-    // Group analytics data by Date, then by KAM, counting Patient Names (orders)
     const pivotData = recentOrdersAnalytics.reduce((acc: any, order) => {
         const dateStr = new Date(order.createdAt).toLocaleDateString();
         if (!acc[dateStr]) acc[dateStr] = {};
@@ -97,24 +118,24 @@ const Dashboard = async () => {
 
     const statBoxes = [
         {
-            title: "TODAY'S ACTIVITY",
+            title: range === 'today' ? "TODAY'S ACTIVITY" : range === 'month' ? "THIS MONTH'S ACTIVITY" : "YTD ACTIVITY",
             stats: [
-                { label: "DOCTOR VISITS", value: todayVisits, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
-                { label: "PATIENTS", value: todayPatients, icon: Users, color: "text-blue-600", bg: "bg-blue-50" }
+                { label: "DOCTOR VISITS", value: statsVisits, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
+                { label: "PATIENTS", value: statsPatients, icon: Users, color: "text-blue-600", bg: "bg-blue-50" }
             ]
         },
         {
-            title: "TODAY'S ORDERS",
+            title: range === 'today' ? "TODAY'S ORDERS" : range === 'month' ? "THIS MONTH'S ORDERS" : "YTD ORDERS",
             stats: [
-                { label: "ORDER PLACED", value: todayOrders, icon: ShoppingCart, color: "text-indigo-600", bg: "bg-indigo-50" },
-                { label: "ORDER SUPPLIED", value: todaySupplied, icon: PackageCheck, color: "text-amber-600", bg: "bg-amber-50" }
+                { label: "ORDER PLACED", value: statsOrders, icon: ShoppingCart, color: "text-indigo-600", bg: "bg-indigo-50" },
+                { label: "ORDER SUPPLIED", value: statsSupplied, icon: PackageCheck, color: "text-amber-600", bg: "bg-amber-50" }
             ]
         },
         {
-            title: "TODAY'S OPERATIONS",
+            title: range === 'today' ? "TODAY'S OPERATIONS" : range === 'month' ? "THIS MONTH'S OPERATIONS" : "YTD OPERATIONS",
             stats: [
-                { label: "SENSOR INSTALLATION", value: todayInstallations, icon: Activity, color: "text-violet-600", bg: "bg-violet-50" },
-                { label: "REPLACEMENT", value: todayReplacements, icon: RefreshCw, color: "text-rose-600", bg: "bg-rose-50" }
+                { label: "SENSOR INSTALLATION", value: statsInstallations, icon: Activity, color: "text-violet-600", bg: "bg-violet-50" },
+                { label: "REPLACEMENT", value: statsReplacements, icon: RefreshCw, color: "text-rose-600", bg: "bg-rose-50" }
             ]
         }
     ];
@@ -127,9 +148,12 @@ const Dashboard = async () => {
                     <h1 className="text-3xl font-black text-slate-800 tracking-tight">Dashboard Overview</h1>
                     <p className="text-slate-500 font-medium">Monitoring platform activity and logistics metrics.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 italic text-slate-500">
-                    <Calendar size={18} />
-                    <span>{today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <div className="flex items-center gap-4">
+                    <FilterButtons />
+                    <div className="hidden lg:flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 italic text-slate-500 text-sm">
+                        <Calendar size={16} />
+                        <span>{today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
                 </div>
             </div>
 
@@ -157,10 +181,11 @@ const Dashboard = async () => {
             <DashboardCharts
                 orderTrend={orderTrend}
                 cityDistribution={cityDistributionData.map(c => ({ name: c.name, orders: c._count.orders }))}
+                fullMonthTrend={fullMonthTrend}
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {/* KAM Performance (Pivot) */}
+                {/* KAM Performance */}
                 <div className="card">
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -173,8 +198,8 @@ const Dashboard = async () => {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="text-left border-b border-slate-200 bg-slate-50">
-                                    <th className="p-4 font-black text-slate-700 uppercase tracking-widest text-[10px]">Row Labels</th>
-                                    <th className="p-4 font-black text-slate-700 text-right uppercase tracking-widest text-[10px]">Count of Patient Name</th>
+                                    <th className="p-4 font-black text-slate-700 uppercase tracking-widest text-[10px]">KAM'S Name</th>
+                                    <th className="p-4 font-black text-slate-700 text-right uppercase tracking-widest text-[10px]">Patient Counting</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">

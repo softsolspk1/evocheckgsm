@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line
@@ -9,25 +9,50 @@ import { Calendar, MapPin } from 'lucide-react';
 interface DashboardChartsProps {
     orderTrend: { date: string; orders: number }[];
     cityDistribution: { name: string; orders: number }[];
+    fullMonthTrend: { date: string; orders: number }[];
 }
 
-const DashboardCharts = ({ orderTrend, cityDistribution }: DashboardChartsProps) => {
+const DashboardCharts = ({ orderTrend, cityDistribution, fullMonthTrend }: DashboardChartsProps) => {
+    const [chartRange, setChartRange] = useState<'7days' | 'month'>('7days');
+
+    const displayTrend = chartRange === '7days' ? orderTrend : fullMonthTrend;
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Order Trend Line Chart */}
+            {/* Order Velocity Line Chart */}
             <div className="card">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-                        <Calendar size={24} />
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                            <Calendar size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-slate-800">Order Velocity</h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                                {chartRange === '7days' ? 'Last 7 Days Trend' : 'Current Month Trend'}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="text-xl font-black text-slate-800">Order Velocity</h3>
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Last 7 Days Trend</p>
+                    <div className="flex gap-2 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                        <button
+                            onClick={() => setChartRange('7days')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${chartRange === '7days' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'
+                                }`}
+                        >
+                            7 DAYS
+                        </button>
+                        <button
+                            onClick={() => setChartRange('month')}
+                            className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${chartRange === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'
+                                }`}
+                        >
+                            THIS MONTH
+                        </button>
                     </div>
                 </div>
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={orderTrend}>
+                        <LineChart data={displayTrend}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10 }} dy={10} />
                             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10 }} />
@@ -40,7 +65,7 @@ const DashboardCharts = ({ orderTrend, cityDistribution }: DashboardChartsProps)
                 </div>
             </div>
 
-            {/* City Distribution Bar Chart */}
+            {/* Geographic Spread Bar Chart */}
             <div className="card">
                 <div className="flex items-center gap-3 mb-8">
                     <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
@@ -68,3 +93,4 @@ const DashboardCharts = ({ orderTrend, cityDistribution }: DashboardChartsProps)
 };
 
 export default DashboardCharts;
+
