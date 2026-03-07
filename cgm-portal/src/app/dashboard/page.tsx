@@ -76,47 +76,69 @@ const Dashboard = async ({ searchParams }: PageProps) => {
     });
 
     // Trend data aggregation based on range
-    let trendData: { date: string; orders: number }[] = [];
+    let trendData: { date: string; orders: number; sortKey: number }[] = [];
 
     if (range === 'today') {
-        // Hourly for today
         const hourlyOrders = await prisma.order.findMany({
             where: { createdAt: { gte: startDate } },
             select: { createdAt: true }
         });
-        const hours: any = {};
+        const hours: Record<number, number> = {};
+        for (let i = 0; i < 24; i++) hours[i] = 0;
+
         hourlyOrders.forEach(o => {
             const h = new Date(o.createdAt).getHours();
-            const label = `${h}:00`;
-            hours[label] = (hours[label] || 0) + 1;
+            hours[h]++;
         });
-        trendData = Object.entries(hours).map(([date, orders]) => ({ date, orders: orders as number }));
+
+        trendData = Object.entries(hours).map(([h, orders]) => ({
+            date: `${h}:00`,
+            orders: orders as number,
+            sortKey: parseInt(h)
+        }));
     } else if (range === 'month') {
-        const dailyOrders = await prisma.order.groupBy({
-            by: ['createdAt'],
-            _count: { id: true },
-            where: { createdAt: { gte: startDate } }
+        const dailyOrders = await prisma.order.findMany({
+            where: { createdAt: { gte: startDate } },
+            select: { createdAt: true }
         });
-        const dates: any = {};
+
+        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        const days: Record<number, number> = {};
+        for (let i = 1; i <= daysInMonth; i++) days[i] = 0;
+
         dailyOrders.forEach(o => {
-            const d = new Date(o.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-            dates[d] = (dates[d] || 0) + o._count.id;
+            const d = new Date(o.createdAt).getDate();
+            days[d]++;
         });
-        trendData = Object.entries(dates).map(([date, orders]) => ({ date, orders: orders as number }));
+
+        const monthLabel = today.toLocaleDateString('en-US', { month: 'short' });
+        trendData = Object.entries(days).map(([d, orders]) => ({
+            date: `${d} ${monthLabel}`,
+            orders: orders as number,
+            sortKey: parseInt(d)
+        }));
     } else { // YTD
         const monthlyOrders = await prisma.order.findMany({
             where: { createdAt: { gte: startDate } },
             select: { createdAt: true }
         });
-        const months: any = {};
+
+        const months: Record<number, number> = {};
+        for (let i = 0; i < 12; i++) months[i] = 0;
+
         monthlyOrders.forEach(o => {
-            const m = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short' });
-            months[m] = (months[m] || 0) + 1;
+            const m = new Date(o.createdAt).getMonth();
+            months[m]++;
         });
-        trendData = Object.entries(months).map(([date, orders]) => ({ date, orders: orders as number }));
+
+        trendData = Object.entries(months).map(([m, orders]) => ({
+            date: new Date(2026, parseInt(m), 1).toLocaleDateString('en-US', { month: 'short' }),
+            orders: orders as number,
+            sortKey: parseInt(m)
+        }));
     }
 
-    trendData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    trendData.sort((a, b) => a.sortKey - b.sortKey);
 
     const installations = await prisma.postAdministrationForm.findMany({
         take: 10,

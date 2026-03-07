@@ -15,6 +15,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
+        const safeDate = (dateStr: string | null) => {
+            if (!dateStr || dateStr.trim() === '') return null;
+            const d = new Date(dateStr);
+            return isNaN(d.getTime()) ? null : d;
+        };
+
+        const visitDate = safeDate(body.visitDate) || new Date();
+        const firstActivationDate = safeDate(body.firstActivationDate);
+
         const postForm = await prisma.postAdministrationForm.create({
             data: {
                 orderId: body.orderId,
@@ -33,12 +42,12 @@ export async function POST(req: Request) {
                 patientName: body.patientName,
                 patientArea: body.patientArea,
                 sensorInstalledBy: body.sensorInstalledBy,
-                visitDate: new Date(body.visitDate),
+                visitDate: visitDate,
                 visitTime: body.visitTime,
                 numberOfDevices: parseInt(body.numberOfDevices) || 1,
                 patientEmail: body.patientEmail,
                 patientWhatsApp: body.patientWhatsApp,
-                firstActivationDate: body.firstActivationDate ? new Date(body.firstActivationDate) : null,
+                firstActivationDate: firstActivationDate,
                 comments: body.comments,
                 serialNumber: body.serialNumber,
                 reminder: body.reminder === 'true' || body.reminder === true
@@ -52,8 +61,16 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json(postForm);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Installation submission error:', error);
+
+        // Handle unique constraint error (installation already reported for this order)
+        if (error.code === 'P2002') {
+            return NextResponse.json({
+                error: 'Installation has already been reported for this order.'
+            }, { status: 400 });
+        }
+
         return NextResponse.json({ error: 'Failed to submit form' }, { status: 500 });
     }
 }
