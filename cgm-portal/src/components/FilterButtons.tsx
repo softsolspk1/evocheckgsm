@@ -11,6 +11,7 @@ const FilterButtons = () => {
         { label: "Today's", value: 'today' },
         { label: 'This Month', value: 'month' },
         { label: 'YTD', value: 'ytd' },
+        { label: 'All Time', value: 'all' },
     ];
 
     const setRange = (range: string) => {
@@ -26,8 +27,8 @@ const FilterButtons = () => {
                     key={range.value}
                     onClick={() => setRange(range.value)}
                     className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${currentRange === range.value
-                            ? 'bg-white text-slate-900 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
                         }`}
                 >
                     {range.label}

@@ -20,11 +20,14 @@ interface PageProps {
 }
 
 const Dashboard = async ({ searchParams }: PageProps) => {
-    const range = (searchParams.range as string) || 'today';
+    const resolvedSearchParams = await searchParams;
+    const range = (resolvedSearchParams.range as string) || 'today';
     const today = new Date();
 
     // Calculate start date based on range
     const getStartDate = () => {
+        if (range === 'all') return null;
+
         const start = new Date();
         start.setHours(0, 0, 0, 0);
 
@@ -37,6 +40,7 @@ const Dashboard = async ({ searchParams }: PageProps) => {
     };
 
     const startDate = getStartDate();
+    const dateFilter = startDate ? { gte: startDate } : undefined;
 
     const [
         statsOrders,
@@ -46,17 +50,17 @@ const Dashboard = async ({ searchParams }: PageProps) => {
         statsPatients,
         statsSupplied
     ] = await Promise.all([
-        prisma.order.count({ where: { createdAt: { gte: startDate } } }),
+        prisma.order.count({ where: { createdAt: dateFilter } }),
         prisma.doctorVisit.aggregate({
-            where: { visitDate: { gte: startDate } },
+            where: { visitDate: dateFilter },
             _sum: { visitCount: true }
         }).then(res => res._sum.visitCount || 0),
-        prisma.postAdministrationForm.count({ where: { createdAt: { gte: startDate } } }),
-        prisma.replacementRequest.count({ where: { createdAt: { gte: startDate } } }),
-        prisma.patient.count({ where: { createdAt: { gte: startDate } } }),
+        prisma.postAdministrationForm.count({ where: { createdAt: dateFilter } }),
+        prisma.replacementRequest.count({ where: { createdAt: dateFilter } }),
+        prisma.patient.count({ where: { createdAt: dateFilter } }),
         prisma.order.count({
             where: {
-                updatedAt: { gte: startDate },
+                updatedAt: dateFilter,
                 status: { in: ['DELIVERED', 'COMPLETED'] }
             }
         }),
@@ -68,7 +72,7 @@ const Dashboard = async ({ searchParams }: PageProps) => {
             _count: {
                 select: {
                     orders: {
-                        where: { createdAt: { gte: startDate } }
+                        where: { createdAt: dateFilter }
                     }
                 }
             }
@@ -80,7 +84,7 @@ const Dashboard = async ({ searchParams }: PageProps) => {
 
     if (range === 'today') {
         const hourlyOrders = await prisma.order.findMany({
-            where: { createdAt: { gte: startDate } },
+            where: { createdAt: dateFilter },
             select: { createdAt: true }
         });
         const hours: Record<number, number> = {};
@@ -98,7 +102,7 @@ const Dashboard = async ({ searchParams }: PageProps) => {
         }));
     } else if (range === 'month') {
         const dailyOrders = await prisma.order.findMany({
-            where: { createdAt: { gte: startDate } },
+            where: { createdAt: dateFilter },
             select: { createdAt: true }
         });
 
@@ -117,9 +121,9 @@ const Dashboard = async ({ searchParams }: PageProps) => {
             orders: orders as number,
             sortKey: parseInt(d)
         }));
-    } else { // YTD
+    } else if (range === 'ytd') {
         const monthlyOrders = await prisma.order.findMany({
-            where: { createdAt: { gte: startDate } },
+            where: { createdAt: dateFilter },
             select: { createdAt: true }
         });
 
@@ -136,9 +140,27 @@ const Dashboard = async ({ searchParams }: PageProps) => {
             orders: orders as number,
             sortKey: parseInt(m)
         }));
+    } else { // All Time
+        const cityOrders = await prisma.order.findMany({
+            select: { city: { select: { name: true } } }
+        });
+
+        const cityCounts: Record<string, number> = {};
+        cityOrders.forEach(o => {
+            const cityName = o.city.name;
+            cityCounts[cityName] = (cityCounts[cityName] || 0) + 1;
+        });
+
+        trendData = Object.entries(cityCounts).map(([city, count]) => ({
+            date: city,
+            orders: count as number,
+            sortKey: 0
+        })).sort((a, b) => b.orders - a.orders).slice(0, 10);
     }
 
-    trendData.sort((a, b) => a.sortKey - b.sortKey);
+    if (range !== 'all') {
+        trendData.sort((a, b) => a.sortKey - b.sortKey);
+    }
 
     const installations = await prisma.postAdministrationForm.findMany({
         take: 10,
@@ -147,9 +169,10 @@ const Dashboard = async ({ searchParams }: PageProps) => {
     });
 
     const recentOrdersAnalytics = await prisma.order.findMany({
+        take: 20, // Limit to 20 for performance table
         orderBy: { createdAt: 'desc' },
         where: {
-            createdAt: { gte: startDate } // Sync with top filter
+            createdAt: dateFilter
         },
         include: { kam: true, patient: true }
     });

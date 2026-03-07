@@ -16,6 +16,7 @@ const DashboardCharts = ({ trendData, cityDistribution, range }: DashboardCharts
     const getTrendTitle = () => {
         if (range === 'today') return "Today's Order Velocity (Hourly)";
         if (range === 'month') return "Monthly Order Velocity (Daily)";
+        if (range === 'all') return "All Time Order Distribution (Top Cities)";
         return "YTD Order Velocity (Monthly)";
     };
 
