@@ -66,3 +66,16 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Failed to record doctor visits' }, { status: 500 });
     }
 }
+
+export async function DELETE(req: Request) {
+    try {
+        const body = await req.json();
+        const visit = await prisma.doctorVisit.delete({
+            where: { id: body.id }
+        });
+        return NextResponse.json(visit);
+    } catch (error) {
+        console.error('Delete doctor visit error:', error);
+        return NextResponse.json({ error: 'Failed to delete doctor visit' }, { status: 500 });
+    }
+}

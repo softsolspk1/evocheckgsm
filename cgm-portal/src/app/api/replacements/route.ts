@@ -51,3 +51,16 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: 'Failed to update replacement' }, { status: 500 });
     }
 }
+
+export async function DELETE(req: Request) {
+    try {
+        const body = await req.json();
+        const replacement = await prisma.replacementRequest.delete({
+            where: { id: body.id }
+        });
+        return NextResponse.json(replacement);
+    } catch (error) {
+        console.error('Delete replacement error:', error);
+        return NextResponse.json({ error: 'Failed to delete replacement' }, { status: 500 });
+    }
+}

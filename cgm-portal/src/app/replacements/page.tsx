@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, User, MapPin, Calendar, Clock, CheckCircle, XCircle, Loader2, Eye } from 'lucide-react';
+import { RotateCcw, User, MapPin, Calendar, Clock, CheckCircle, XCircle, Loader2, Eye, Trash2 } from 'lucide-react';
 import ReplacementDetailModal from '@/components/ReplacementDetailModal';
 
 export default function ReplacementsPage() {
@@ -42,6 +42,21 @@ export default function ReplacementsPage() {
             if (res.ok) fetchReplacements();
         } catch (err) {
             console.error('Failed to update replacement status', err);
+        }
+    };
+
+    const deleteReplacement = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this replacement request?')) return;
+
+        try {
+            const res = await fetch('/api/replacements', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (res.ok) fetchReplacements();
+        } catch (err) {
+            console.error('Failed to delete replacement request', err);
         }
     };
 
@@ -116,7 +131,7 @@ export default function ReplacementsPage() {
                                                 >
                                                     <Eye size={16} />
                                                 </button>
-                                                {req.status === 'PENDING' && (
+                                                {req.status === 'PENDING' ? (
                                                     <>
                                                         <button
                                                             onClick={() => updateStatus(req.id, 'APPROVED')}
@@ -133,6 +148,14 @@ export default function ReplacementsPage() {
                                                             <XCircle size={16} />
                                                         </button>
                                                     </>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => deleteReplacement(req.id)}
+                                                        className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                        title="Delete Request"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>

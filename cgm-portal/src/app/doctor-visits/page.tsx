@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, User, Calendar, Loader2, TrendingUp } from 'lucide-react';
+import { Stethoscope, User, Calendar, Loader2, TrendingUp, Trash2 } from 'lucide-react';
 
 export default function DoctorVisitsPage() {
     const [visits, setVisits] = useState<any[]>([]);
@@ -22,6 +22,21 @@ export default function DoctorVisitsPage() {
     useEffect(() => {
         fetchVisits();
     }, []);
+
+    const deleteVisit = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this visit record?')) return;
+
+        try {
+            const res = await fetch('/api/doctor-visits', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (res.ok) fetchVisits();
+        } catch (err) {
+            console.error('Failed to delete doctor visit', err);
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -47,6 +62,7 @@ export default function DoctorVisitsPage() {
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]">Visit Date</th>
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] text-center">Total Visits</th>
                                     <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] text-right">Performance</th>
+                                    <th className="pb-4 px-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -88,10 +104,19 @@ export default function DoctorVisitsPage() {
                                                 </div>
                                             </div>
                                         </td>
+                                        <td className="py-5 px-2 text-right">
+                                            <button
+                                                onClick={() => deleteVisit(visit.id)}
+                                                className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                title="Delete Visit"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={4} className="py-20 text-center text-slate-300 italic">
+                                        <td colSpan={5} className="py-20 text-center text-slate-300 italic">
                                             No doctor visits recorded yet.
                                         </td>
                                     </tr>
